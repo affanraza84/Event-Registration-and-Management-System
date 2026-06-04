@@ -265,3 +265,149 @@ export async function cancelRegistrationAction(registrationId: string) {
     };
   }
 }
+
+/**
+ * Server Action for Host to close an event (RSVPs no longer allowed).
+ */
+export async function closeEventAction(eventId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "host") {
+      return { error: "Unauthorized: Only hosts can close events" };
+    }
+
+    await connectToDatabase();
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    if (event.hostId.toString() !== session.user.id) {
+      return { error: "Unauthorized: You do not own this event" };
+    }
+
+    event.isClosed = true;
+    await event.save();
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Close event error:", error);
+    return {
+      error: error.message || "An unexpected error occurred during event closure",
+    };
+  }
+}
+
+/**
+ * Server Action for Host to delete an event and cascade-delete registrations.
+ */
+export async function deleteEventAction(eventId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "host") {
+      return { error: "Unauthorized: Only hosts can delete events" };
+    }
+
+    await connectToDatabase();
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    if (event.hostId.toString() !== session.user.id) {
+      return { error: "Unauthorized: You do not own this event" };
+    }
+
+    // Delete the event
+    await Event.findByIdAndDelete(eventId);
+
+    // Cascade delete registrations
+    await Registration.deleteMany({ eventId: event._id });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Delete event error:", error);
+    return {
+      error: error.message || "An unexpected error occurred during event deletion",
+    };
+  }
+}
+
+/**
+ * Server Action to fetch all analytics and dashboard metrics for a Host.
+ */
+export async function getHostDashboardDataAction() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "host") {
+      return { error: "Unauthorized: Only hosts can view dashboard data" };
+    }
+
+    await connectToDatabase();
+
+    const events = await Event.find({ hostId: session.user.id }).sort({
+      createdAt: -1,
+    });
+
+    const eventIds = events.map((e) => e._id);
+    const registrations = await Registration.find({
+      eventId: { $in: eventIds },
+    })
+      .populate("eventId")
+      .sort({ registeredAt: -1 });
+
+    const totalEvents = events.length;
+    const totalAttendees = events.reduce((sum, e) => sum + e.attendeeCount, 0);
+    const upcomingEvents = events.filter(
+      (e) => new Date(e.date) > new Date()
+    ).length;
+
+    const serializedEvents = events.map((ev) => ({
+      id: ev._id.toString(),
+      title: ev.title,
+      slug: ev.slug,
+      date: ev.date.toISOString(),
+      time: ev.time,
+      location: ev.location,
+      capacity: ev.capacity,
+      attendeeCount: ev.attendeeCount,
+      registrationDeadline: ev.registrationDeadline.toISOString(),
+      isClosed: ev.isClosed,
+    }));
+
+    const serializedRegistrations = registrations.map((reg) => {
+      const ev = reg.eventId as any;
+      return {
+        id: reg._id.toString(),
+        registeredAt: reg.registeredAt.toISOString(),
+        attendeeName: reg.attendeeName,
+        attendeeEmail: reg.attendeeEmail,
+        eventTitle: ev ? ev.title : "Unknown Event",
+        eventId: ev ? ev._id.toString() : "",
+      };
+    });
+
+    return {
+      success: true,
+      analytics: {
+        totalEvents,
+        totalAttendees,
+        upcomingEvents,
+      },
+      events: serializedEvents,
+      registrations: serializedRegistrations,
+    };
+  } catch (error: any) {
+    console.error("Get host dashboard data error:", error);
+    return {
+      error:
+        error.message ||
+        "An unexpected error occurred while fetching dashboard data",
+    };
+  }
+}
