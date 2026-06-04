@@ -13,6 +13,8 @@ import {
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Luma | Host Memorable Events & Gatherings",
   description:
