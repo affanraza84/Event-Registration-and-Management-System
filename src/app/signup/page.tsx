@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, Lock, Shield, Loader2, UserPlus } from "lucide-react";
+import { User, Mail, Lock, Shield, Loader2, UserPlus, ArrowLeft } from "lucide-react";
 import { signupSchema, SignupInput } from "@/validations/auth";
 import { signUpAction } from "@/actions/auth";
 
@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<"host" | "attendee">("host");
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   const {
     register,
@@ -40,6 +41,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupInput) => {
     setIsLoading(true);
     setGlobalError(null);
+    setStatusMsg(null);
 
     try {
       const result = await signUpAction(data);
@@ -49,6 +51,8 @@ export default function SignupPage() {
         setIsLoading(false);
         return;
       }
+
+      setStatusMsg("Account created successfully! Logging you in...");
 
       // Automatically sign the user in after successful signup
       const loginResult = await signIn("credentials", {
@@ -60,10 +64,12 @@ export default function SignupPage() {
 
       if (loginResult?.error) {
         // Fallback: send them to login page if auto-login failed
-        router.push(`/login?registered=true&email=${encodeURIComponent(data.email)}`);
+        setStatusMsg("Redirecting to login...");
+        window.location.href = `/login?registered=true&email=${encodeURIComponent(data.email)}`;
       } else {
-        router.push(data.role === "host" ? "/dashboard" : "/my-events");
-        router.refresh();
+        // Full page reload redirect to clear client router cache and ensure middleware updates
+        setStatusMsg("Login successful! Redirecting...");
+        window.location.href = data.role === "host" ? "/dashboard" : "/my-events";
       }
     } catch {
       setGlobalError("An unexpected error occurred. Please try again.");
@@ -78,8 +84,17 @@ export default function SignupPage() {
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
+        {/* Home Button */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-neutral-400 hover:text-neutral-200 text-sm font-medium mb-6 transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+
         {/* Logo/Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 font-semibold">
           <Link
             href="/"
             className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
@@ -125,6 +140,12 @@ export default function SignupPage() {
             {globalError && (
               <div className="p-3.5 bg-red-950/40 border border-red-900/50 rounded-lg text-red-400 text-sm font-medium">
                 {globalError}
+              </div>
+            )}
+
+            {statusMsg && (
+              <div className="p-3.5 bg-emerald-950/40 border border-emerald-900/50 rounded-lg text-emerald-400 text-sm font-medium">
+                {statusMsg}
               </div>
             )}
 
