@@ -9,8 +9,8 @@ import Attendee from "@/models/Attendee";
 import Registration from "@/models/Registration";
 import { getUniqueSlug } from "@/utils/slug";
 import { eventCreationSchema } from "@/validations/event";
-import { registrationSchema } from "@/validations/registration";
 import mongoose from "mongoose";
+import { IEvent } from "@/types";
 
 /**
  * Server Action for Host to create a new event.
@@ -67,10 +67,12 @@ export async function createEventAction(data: unknown) {
         title: newEvent.title,
       },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Create event error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during event creation";
     return {
-      error: error.message || "An unexpected error occurred during event creation",
+      error: errorMessage,
     };
   }
 }
@@ -197,18 +199,21 @@ export async function registerForEventAction(data: {
           attendeeId: attendee._id.toString(),
         },
       };
-    } catch (regError: any) {
+    } catch (regError: unknown) {
       // Revert event count increment if registration record fails
       await Event.findByIdAndUpdate(event._id, { $inc: { attendeeCount: -1 } });
-      if (regError.code === 11000) {
+      const code = (regError as { code?: number })?.code;
+      if (code === 11000) {
         return { error: "You are already registered for this event" };
       }
       throw regError;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Register event error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during registration";
     return {
-      error: error.message || "An unexpected error occurred during registration",
+      error: errorMessage,
     };
   }
 }
@@ -258,10 +263,12 @@ export async function cancelRegistrationAction(registrationId: string) {
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Cancel registration error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during cancellation";
     return {
-      error: error.message || "An unexpected error occurred during cancellation",
+      error: errorMessage,
     };
   }
 }
@@ -292,10 +299,12 @@ export async function closeEventAction(eventId: string) {
     await event.save();
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Close event error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during event closure";
     return {
-      error: error.message || "An unexpected error occurred during event closure",
+      error: errorMessage,
     };
   }
 }
@@ -329,10 +338,12 @@ export async function deleteEventAction(eventId: string) {
     await Registration.deleteMany({ eventId: event._id });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Delete event error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during event deletion";
     return {
-      error: error.message || "An unexpected error occurred during event deletion",
+      error: errorMessage,
     };
   }
 }
@@ -381,7 +392,7 @@ export async function getHostDashboardDataAction() {
     }));
 
     const serializedRegistrations = registrations.map((reg) => {
-      const ev = reg.eventId as any;
+      const ev = reg.eventId as unknown as IEvent;
       return {
         id: reg._id.toString(),
         registeredAt: reg.registeredAt.toISOString(),
@@ -402,12 +413,14 @@ export async function getHostDashboardDataAction() {
       events: serializedEvents,
       registrations: serializedRegistrations,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Get host dashboard data error:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while fetching dashboard data";
     return {
-      error:
-        error.message ||
-        "An unexpected error occurred while fetching dashboard data",
+      error: errorMessage,
     };
   }
 }

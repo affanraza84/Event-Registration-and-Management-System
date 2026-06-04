@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import Registration from "@/models/Registration";
-import Event from "@/models/Event";
+import { IEventDocument } from "@/models/Event";
 import MyEventsClient from "./MyEventsClient";
 
 export const metadata = {
@@ -35,7 +35,7 @@ export default async function MyEventsPage() {
   // Map to simple JSON structure for Client Component
   const serializedRegistrations = registrations
     .map((reg) => {
-      const event = reg.eventId as any; // Cast as populated mongoose object
+      const event = reg.eventId as unknown as IEventDocument; // Cast as populated mongoose object
 
       if (!event) return null;
 
@@ -54,7 +54,7 @@ export default async function MyEventsPage() {
         },
       };
     })
-    .filter((item) => item !== null) as any[];
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   return (
     <MyEventsClient

@@ -66,10 +66,12 @@ export async function signUpAction(data: unknown) {
         },
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Signup error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during signup";
     return {
-      error: error.message || "An unexpected error occurred during signup",
+      error: errorMessage,
     };
   }
 }

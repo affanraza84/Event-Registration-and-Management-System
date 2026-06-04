@@ -66,10 +66,11 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("API POST /api/events error:", error);
+    const message = error instanceof Error ? error.message : "An unexpected error occurred";
     return NextResponse.json(
-      { error: error.message || "An unexpected error occurred" },
+      { error: message },
       { status: 500 }
     );
   }

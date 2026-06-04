@@ -63,14 +63,15 @@ export async function GET(
         "Content-Disposition": `attachment; filename="${event.slug}-attendees.csv"`,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("CSV Export API error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during CSV export";
     return NextResponse.json(
       {
-        error:
-          error.message || "An unexpected error occurred during CSV export",
+        error: errorMessage,
       },
-      { status: 550 }
+      { status: 500 }
     );
   }
 }

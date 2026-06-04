@@ -15,7 +15,6 @@ interface MongooseCache {
 
 // Extend global type safely
 declare global {
-  // eslint-disable-next-line no-var
   var mongooseCached: MongooseCache | undefined;
 }
 

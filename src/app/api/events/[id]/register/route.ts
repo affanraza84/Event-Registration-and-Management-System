@@ -28,10 +28,12 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, ...result }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("API POST /api/events/[id]/register error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during registration";
     return NextResponse.json(
-      { error: error.message || "An unexpected error occurred during registration" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

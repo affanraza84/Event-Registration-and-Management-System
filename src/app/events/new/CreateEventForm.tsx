@@ -40,7 +40,7 @@ export default function CreateEventForm() {
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: EventCreationInput) => {
     setIsLoading(true);
     setGlobalError(null);
 
@@ -52,7 +52,7 @@ export default function CreateEventForm() {
       } else if (result.success && result.event) {
         router.push(`/events/${result.event.slug}`);
       }
-    } catch (err) {
+    } catch {
       setGlobalError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

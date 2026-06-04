@@ -4,14 +4,11 @@ import {
   Calendar,
   ArrowRight,
   ShieldCheck,
-  Ticket,
   Clock,
   MapPin,
-  Users,
   Compass,
   Zap,
   BarChart3,
-  Mail,
 } from "lucide-react";
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";

@@ -20,7 +20,6 @@ import {
   Search,
   Filter,
   Trash2,
-  Lock,
   Loader2,
   X,
   AlertTriangle,
@@ -30,7 +29,6 @@ import {
   CalendarCheck,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
 } from "lucide-react";
 import { closeEventAction, deleteEventAction } from "@/actions/events";
 
@@ -64,8 +62,18 @@ interface DashboardClientProps {
   };
   initialEvents: EventItem[];
   initialRegistrations: RegistrationItem[];
-  session: any;
+  session: {
+    user: {
+      name?: string | null;
+      email?: string | null;
+      id?: string | null;
+      role?: string | null;
+    };
+  };
 }
+
+// TanStack Table columns helper
+const columnHelper = createColumnHelper<RegistrationItem>();
 
 export default function DashboardClient({
   initialAnalytics,
@@ -143,7 +151,7 @@ export default function DashboardClient({
         setSelectedEvent(null);
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setActionError("Failed to close the event. Please try again.");
     } finally {
       setIsProcessing(false);
@@ -189,7 +197,7 @@ export default function DashboardClient({
         setSelectedEvent(null);
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setActionError("Failed to delete the event. Please try again.");
     } finally {
       setIsProcessing(false);
@@ -222,8 +230,6 @@ export default function DashboardClient({
     document.body.removeChild(link);
   };
 
-  // TanStack Table columns helper
-  const columnHelper = createColumnHelper<RegistrationItem>();
   const columns = useMemo(
     () => [
       columnHelper.accessor("attendeeName", {

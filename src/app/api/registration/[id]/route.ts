@@ -15,13 +15,12 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("API DELETE /api/registration/[id] error:", error);
+    const message = error instanceof Error ? error.message : "An unexpected error occurred during registration cancellation";
     return NextResponse.json(
       {
-        error:
-          error.message ||
-          "An unexpected error occurred during registration cancellation",
+        error: message,
       },
       { status: 500 }
     );

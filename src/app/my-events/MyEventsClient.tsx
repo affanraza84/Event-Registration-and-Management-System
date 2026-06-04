@@ -36,7 +36,14 @@ interface RegistrationItem {
 
 interface MyEventsClientProps {
   initialRegistrations: RegistrationItem[];
-  session: any;
+  session: {
+    user: {
+      name?: string | null;
+      email?: string | null;
+      id?: string | null;
+      role?: string | null;
+    };
+  };
 }
 
 export default function MyEventsClient({
@@ -81,7 +88,7 @@ export default function MyEventsClient({
         closeConfirmation();
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setErrorMsg("Failed to cancel registration. Please try again.");
     } finally {
       setIsCancelling(false);
@@ -147,7 +154,7 @@ export default function MyEventsClient({
               My Registrations
             </h1>
             <p className="text-neutral-400 mt-2 text-sm">
-              Keep track of events you have RSVP'd for and manage your tickets.
+              Keep track of events you have RSVP&apos;d for and manage your tickets.
             </p>
           </div>
         </div>
@@ -161,7 +168,7 @@ export default function MyEventsClient({
               No registered events yet
             </h3>
             <p className="text-neutral-500 text-sm">
-              You haven't registered for any events. Browse the homepage to RSVP for active events!
+              You haven&apos;t registered for any events. Browse the homepage to RSVP for active events!
             </p>
             <Link
               href="/"

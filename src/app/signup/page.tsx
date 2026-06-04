@@ -65,7 +65,7 @@ export default function SignupPage() {
         router.push(data.role === "host" ? "/dashboard" : "/my-events");
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setGlobalError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }

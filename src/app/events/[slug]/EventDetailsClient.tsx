@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,7 +10,6 @@ import {
   Clock,
   MapPin,
   Users,
-  Sparkles,
   Loader2,
   Ticket,
   Lock,
@@ -19,7 +17,6 @@ import {
   User,
   ShieldAlert,
 } from "lucide-react";
-import { registrationSchema } from "@/validations/registration";
 import { registerForEventAction } from "@/actions/events";
 
 interface EventDetailsClientProps {
@@ -37,7 +34,14 @@ interface EventDetailsClientProps {
   };
   initialIsRegistered: boolean;
   initialAttendeeCount: number;
-  session: any;
+  session: {
+    user?: {
+      name?: string | null;
+      email?: string | null;
+      id?: string | null;
+      role?: string | null;
+    } | null;
+  } | null;
 }
 
 export default function EventDetailsClient({
@@ -86,7 +90,6 @@ export default function EventDetailsClient({
   const {
     register,
     handleSubmit,
-    formState: { errors },
   } = useForm({
     defaultValues: {
       name: session?.user?.name || "",
@@ -95,15 +98,15 @@ export default function EventDetailsClient({
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: { name?: string; email?: string; password?: string }) => {
     setIsSubmitting(true);
     setGlobalError(null);
 
     try {
       const result = await registerForEventAction({
         eventId: event.id,
-        name: isAttendee ? session.user.name : data.name,
-        email: isAttendee ? session.user.email : data.email,
+        name: (isAttendee ? session?.user?.name : data.name) || "",
+        email: (isAttendee ? session?.user?.email : data.email) || "",
         password: isAttendee ? undefined : data.password,
       });
 
@@ -133,7 +136,7 @@ export default function EventDetailsClient({
       }
 
       router.refresh();
-    } catch (err) {
+    } catch {
       setGlobalError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -287,7 +290,7 @@ export default function EventDetailsClient({
                     /* Simple RSVP confirmation for logged-in attendee */
                     <div className="space-y-3 pt-2">
                       <p className="text-neutral-400 text-xs">
-                        You are logged in as <strong>{session.user.name}</strong>.
+                        You are logged in as <strong>{session?.user?.name}</strong>.
                       </p>
                       <button
                         type="submit"
@@ -369,7 +372,7 @@ export default function EventDetailsClient({
                           />
                         </div>
                         <p className="text-[9px] text-neutral-500">
-                          We will create an account for you if you don't have one.
+                          We will create an account for you if you don&apos;t have one.
                         </p>
                       </div>
 

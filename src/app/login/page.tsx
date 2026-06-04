@@ -59,7 +59,7 @@ function LoginForm() {
         }
         router.refresh();
       }
-    } catch (err: any) {
+    } catch {
       setGlobalError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -174,7 +174,7 @@ function LoginForm() {
       </form>
 
       <div className="mt-6 text-center text-sm text-neutral-400 border-t border-neutral-800/50 pt-4">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link
           href="/signup"
           className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
