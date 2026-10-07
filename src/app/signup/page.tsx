@@ -69,7 +69,7 @@ export default function SignupPage() {
       } else {
         // Full page reload redirect to clear client router cache and ensure middleware updates
         setStatusMsg("Login successful! Redirecting...");
-        window.location.href = data.role === "host" ? "/dashboard" : "/my-events";
+        window.location.href = data.role === "host" ? "/events/new" : "/my-events";
       }
     } catch {
       setGlobalError("An unexpected error occurred. Please try again.");

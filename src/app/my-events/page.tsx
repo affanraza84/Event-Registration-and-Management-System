@@ -23,38 +23,57 @@ export default async function MyEventsPage() {
     redirect("/dashboard");
   }
 
-  await connectToDatabase();
+  let serializedRegistrations: Array<{
+    id: string;
+    registeredAt: string;
+    attendeeName: string;
+    attendeeEmail: string;
+    event: {
+      id: string;
+      title: string;
+      slug: string;
+      date: string;
+      time: string;
+      location: string;
+    };
+  }> = [];
 
-  // Find all registrations for this attendee and populate the event info
-  const registrations = await Registration.find({
-    attendeeId: session.user.id,
-  })
-    .populate("eventId")
-    .sort({ registeredAt: -1 });
+  try {
+    await connectToDatabase();
 
-  // Map to simple JSON structure for Client Component
-  const serializedRegistrations = registrations
-    .map((reg) => {
-      const event = reg.eventId as unknown as IEventDocument; // Cast as populated mongoose object
-
-      if (!event) return null;
-
-      return {
-        id: reg._id.toString(),
-        registeredAt: reg.registeredAt.toISOString(),
-        attendeeName: reg.attendeeName,
-        attendeeEmail: reg.attendeeEmail,
-        event: {
-          id: event._id.toString(),
-          title: event.title,
-          slug: event.slug,
-          date: event.date.toISOString(),
-          time: event.time,
-          location: event.location,
-        },
-      };
+    // Find all registrations for this attendee and populate the event info
+    const registrations = await Registration.find({
+      attendeeId: session.user.id,
     })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
+      .populate("eventId")
+      .sort({ registeredAt: -1 });
+
+    // Map to simple JSON structure for Client Component
+    serializedRegistrations = registrations
+      .map((reg) => {
+        const event = reg.eventId as unknown as IEventDocument; // Cast as populated mongoose object
+
+        if (!event) return null;
+
+        return {
+          id: reg._id.toString(),
+          registeredAt: reg.registeredAt.toISOString(),
+          attendeeName: reg.attendeeName,
+          attendeeEmail: reg.attendeeEmail,
+          event: {
+            id: event._id.toString(),
+            title: event.title,
+            slug: event.slug,
+            date: event.date.toISOString(),
+            time: event.time,
+            location: event.location,
+          },
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  } catch (error) {
+    console.error("Failed to load attendee registrations:", error);
+  }
 
   return (
     <MyEventsClient

@@ -31,6 +31,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { closeEventAction, deleteEventAction } from "@/actions/events";
+import Navbar from "@/components/Navbar";
 
 interface EventItem {
   id: string;
@@ -294,33 +295,7 @@ export default function DashboardClient({
       <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/3 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Header */}
-      <header className="border-b border-neutral-900 bg-neutral-900/20 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
-          >
-            Luma Dashboard
-          </Link>
-          <span className="px-2.5 py-0.5 text-xs font-semibold bg-purple-950/60 text-purple-300 border border-purple-900/60 rounded-full flex items-center gap-1">
-            <Shield className="w-3.5 h-3.5" />
-            Host
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-neutral-350 hidden sm:inline">
-            Welcome, <strong>{session.user.name}</strong> ({session.user.email})
-          </span>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 text-sm font-medium rounded-lg transition-all cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Container */}
       <main className="flex-1 p-8 max-w-7xl mx-auto w-full z-10 space-y-10">

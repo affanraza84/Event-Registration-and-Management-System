@@ -11,20 +11,26 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  await connectToDatabase();
-  const event = await Event.findOne({ slug });
+  try {
+    const { slug } = await params;
+    await connectToDatabase();
+    const event = await Event.findOne({ slug });
 
-  if (!event) {
+    if (!event) {
+      return {
+        title: "Event Not Found | Luma",
+      };
+    }
+
     return {
-      title: "Event Not Found | Luma",
+      title: `${event.title} | Luma`,
+      description: event.description.substring(0, 160),
+    };
+  } catch {
+    return {
+      title: "Event Details | Luma",
     };
   }
-
-  return {
-    title: `${event.title} | Luma`,
-    description: event.description.substring(0, 160),
-  };
 }
 
 export default async function EventPage({
@@ -33,9 +39,28 @@ export default async function EventPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  await connectToDatabase();
+  let event = null;
 
-  const event = await Event.findOne({ slug });
+  try {
+    await connectToDatabase();
+    event = await Event.findOne({ slug });
+  } catch (error) {
+    console.error("Database connection error on event page:", error);
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-2xl font-bold mb-3 text-red-400">Unable to load event</h2>
+        <p className="text-neutral-400 max-w-md mb-6">
+          There was an issue connecting to the database. Please check back shortly or try reloading.
+        </p>
+        <a
+          href={`/events/${slug}`}
+          className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-sm font-medium transition-all"
+        >
+          Try Again
+        </a>
+      </div>
+    );
+  }
 
   if (!event) {
     notFound();

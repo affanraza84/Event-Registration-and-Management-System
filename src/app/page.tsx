@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 import {
   Sparkles,
   Calendar,
@@ -22,26 +23,43 @@ export const metadata = {
 };
 
 export default async function Home() {
-  await connectToDatabase();
+  let serializedEvents: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    date: string;
+    time: string;
+    location: string;
+    capacity: number;
+    attendeeCount: number;
+  }> = [];
 
-  // Fetch upcoming, active events to showcase on landing page
-  const upcomingEvents = await Event.find({
-    isClosed: false,
-    date: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-  })
-    .sort({ date: 1 })
-    .limit(4);
+  try {
+    await connectToDatabase();
 
-  const serializedEvents = upcomingEvents.map((ev) => ({
-    id: ev._id.toString(),
-    title: ev.title,
-    slug: ev.slug,
-    date: ev.date.toISOString().split("T")[0],
-    time: ev.time,
-    location: ev.location,
-    capacity: ev.capacity,
-    attendeeCount: ev.attendeeCount,
-  }));
+    // Fetch upcoming, active events to showcase on landing page
+    const upcomingEvents = await Event.find({
+      isClosed: false,
+      date: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+    })
+      .sort({ date: 1 })
+      .limit(4);
+
+    serializedEvents = upcomingEvents.map((ev) => ({
+      id: ev._id.toString(),
+      title: ev.title,
+      slug: ev.slug,
+      date: ev.date.toISOString().split("T")[0],
+      time: ev.time,
+      location: ev.location,
+      capacity: ev.capacity,
+      attendeeCount: ev.attendeeCount,
+    }));
+  } catch (error) {
+    console.error("Failed to load upcoming events:", error);
+    // Graceful fallback to empty list so landing page still renders flawlessly
+    serializedEvents = [];
+  }
 
   return (
     <div className="min-h-screen bg-neutral-955 text-neutral-100 flex flex-col relative overflow-hidden">
@@ -50,29 +68,7 @@ export default async function Home() {
       <div className="absolute top-1/3 right-10 w-96 h-96 bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-10 w-96 h-96 bg-indigo-600/5 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Nav bar */}
-      <nav className="border-b border-neutral-900 bg-neutral-950/30 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <Link
-          href="/"
-          className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
-        >
-          Luma
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-neutral-400 hover:text-neutral-200 transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/signup"
-            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-medium rounded-xl transition-all shadow-md shadow-purple-950/20"
-          >
-            Create Account
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <header className="z-10 text-center max-w-4xl mx-auto px-6 pt-20 pb-16 flex flex-col items-center">

@@ -18,6 +18,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { registerForEventAction } from "@/actions/events";
+import Navbar from "@/components/Navbar";
 
 interface EventDetailsClientProps {
   event: {
@@ -144,12 +145,15 @@ export default function EventDetailsClient({
   };
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 text-neutral-100 py-12 px-4">
-      {/* Background blobs for premium glow effect */}
-      <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/3 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="relative min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+      <Navbar />
 
-      <div className="max-w-5xl mx-auto z-10 relative">
+      <div className="relative flex-1 py-12 px-4">
+        {/* Background blobs for premium glow effect */}
+        <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/3 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto z-10 relative">
         {/* Header */}
         <Link
           href="/"
@@ -402,6 +406,7 @@ export default function EventDetailsClient({
         </div>
       </div>
     </div>
+  </div>
   );
 }
 

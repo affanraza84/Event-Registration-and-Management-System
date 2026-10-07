@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { eventCreationSchema, EventCreationInput } from "@/validations/event";
 import { createEventAction } from "@/actions/events";
+import Navbar from "@/components/Navbar";
 
 export default function CreateEventForm() {
   const router = useRouter();
@@ -60,12 +61,15 @@ export default function CreateEventForm() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-neutral-950 px-4 py-12">
-      {/* Background blobs for premium glow effect */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="relative min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+      <Navbar />
 
-      <div className="w-full max-w-2xl z-10">
+      <div className="relative flex-1 py-12 px-4 flex flex-col items-center justify-center overflow-hidden">
+        {/* Background blobs for premium glow effect */}
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-2xl z-10">
         {/* Back Button */}
         <Link
           href="/dashboard"
@@ -302,5 +306,6 @@ export default function CreateEventForm() {
         </div>
       </div>
     </div>
+  </div>
   );
 }

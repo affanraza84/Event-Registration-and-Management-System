@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Shield, User, Loader2 } from "lucide-react";
+import { Mail, Lock, Shield, User, Loader2, ArrowLeft } from "lucide-react";
 import { loginSchema, LoginInput } from "@/validations/auth";
 
 function LoginForm() {
@@ -55,7 +55,7 @@ function LoginForm() {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          router.push(data.role === "host" ? "/dashboard" : "/my-events");
+          router.push(data.role === "host" ? "/events/new" : "/my-events");
         }
         router.refresh();
       }
@@ -194,6 +194,15 @@ export default function LoginPage() {
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
+        {/* Home Button */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-neutral-400 hover:text-neutral-200 text-sm font-medium mb-6 transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <Link
