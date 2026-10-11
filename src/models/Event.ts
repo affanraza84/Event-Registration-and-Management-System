@@ -60,6 +60,11 @@ const EventSchema = new Schema<IEventDocument>(
       required: [true, "Host ID is required"],
       index: true,
     },
+    sourceUrl: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
   },
   {
     timestamps: true,

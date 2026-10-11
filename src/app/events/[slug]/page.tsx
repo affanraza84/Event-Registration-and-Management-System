@@ -18,17 +18,17 @@ export async function generateMetadata({
 
     if (!event) {
       return {
-        title: "Event Not Found | Luma",
+        title: "Event Not Found | EventScout",
       };
     }
 
     return {
-      title: `${event.title} | Luma`,
+      title: `${event.title} | EventScout`,
       description: event.description.substring(0, 160),
     };
   } catch {
     return {
-      title: "Event Details | Luma",
+      title: "Event Details | EventScout",
     };
   }
 }
@@ -88,6 +88,7 @@ export default async function EventPage({
     capacity: event.capacity,
     registrationDeadline: event.registrationDeadline.toISOString().split("T")[0],
     isClosed: event.isClosed,
+    sourceUrl: event.sourceUrl || undefined,
   };
 
   return (

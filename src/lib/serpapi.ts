@@ -1,8 +1,14 @@
 import { buildDiscoveryQuery, DiscoveryQueryInput } from "@/utils/discoveryQuery";
 import { IDiscoveredEvent, DiscoveryResponse } from "@/types/discovery";
+import {
+  normalizeUrl,
+  classifyEvent,
+  calculateRelevance,
+  RelevanceCriteria,
+} from "@/utils/eventIntelligence";
 
 const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_TIMEOUT_MS = 12000;
 const MAX_RESULTS_LIMIT = 20;
 
 export class SerpApiConfigError extends Error {
@@ -71,12 +77,14 @@ export function sanitizeText(text: unknown, maxLength: number = 300): string {
 
 /**
  * Normalizes raw SerpApi search results into standard IDiscoveredEvent objects.
- * Validates URLs, strips unsafe characters, and never invents unverified dates/venues.
+ * Deduplicates via normalized URLs, classifies evidence-based categories,
+ * scores deterministic relevance, and explicitly distinguishes confirmed dates/locations.
  */
 export function normalizeSerpApiResponse(
   rawData: unknown,
   searchQuery: string,
-  limit: number = 10
+  limit: number = 10,
+  criteria: RelevanceCriteria = {}
 ): DiscoveryResponse {
   if (!rawData || typeof rawData !== "object") {
     return {
@@ -106,7 +114,10 @@ export function normalizeSerpApiResponse(
       const eventObj = item as Record<string, unknown>;
 
       const link = typeof eventObj.link === "string" ? eventObj.link : "";
-      if (!isValidHttpUrl(link) || seenUrls.has(link)) continue;
+      if (!isValidHttpUrl(link)) continue;
+
+      const cleanUrl = normalizeUrl(link);
+      if (seenUrls.has(cleanUrl)) continue;
 
       const title = sanitizeText(eventObj.title, 150);
       if (!title) continue;
@@ -140,35 +151,64 @@ export function normalizeSerpApiResponse(
         }
       }
 
-      seenUrls.add(link);
+      const hasConfirmedDate = Boolean(dateInfo && dateInfo.trim().length > 0);
+      const dateDisplay = hasConfirmedDate ? dateInfo! : "Date not confirmed";
+      const hasConfirmedLocation = Boolean(locationInfo && locationInfo.trim().length > 0);
+      const locationDisplay = hasConfirmedLocation ? locationInfo! : "Location unverified";
+
+      const snippet = description || "Explore event information and ticket registration on the official website.";
+      const category = classifyEvent(title, snippet);
+
+      const { score: relevanceScore, signals: relevanceSignals } = calculateRelevance(
+        {
+          title,
+          snippet,
+          dateInfo,
+          locationInfo,
+          originalUrl: link,
+          category,
+        },
+        criteria
+      );
+
+      seenUrls.add(cleanUrl);
       events.push({
         id: `disc-ev-${events.length + 1}`,
         title,
-        snippet: description || "Explore event information and ticket registration on the official website.",
+        snippet,
         originalUrl: link,
+        normalizedUrl: cleanUrl,
         displayedSource: extractDomain(link),
+        category,
         dateInfo,
+        hasConfirmedDate,
+        dateDisplay,
         locationInfo,
+        hasConfirmedLocation,
+        locationDisplay,
+        relevanceScore,
+        relevanceSignals,
         isExternal: true,
       });
-
-      if (events.length >= limit) break;
     }
   }
 
   // 2. Process organic Google search results
-  if (events.length < limit && Array.isArray(data.organic_results)) {
+  if (Array.isArray(data.organic_results)) {
     for (const item of data.organic_results) {
       if (!item || typeof item !== "object") continue;
       const res = item as Record<string, unknown>;
 
       const link = typeof res.link === "string" ? res.link : "";
-      if (!isValidHttpUrl(link) || seenUrls.has(link)) continue;
+      if (!isValidHttpUrl(link)) continue;
+
+      const cleanUrl = normalizeUrl(link);
+      if (seenUrls.has(cleanUrl)) continue;
 
       const title = sanitizeText(res.title, 150);
       if (!title) continue;
 
-      const snippet = sanitizeText(res.snippet, 300);
+      const snippet = sanitizeText(res.snippet, 300) || "Visit original source for comprehensive event details and registration.";
 
       // Displayed link or domain
       const displayedSource =
@@ -182,26 +222,73 @@ export function normalizeSerpApiResponse(
         dateInfo = sanitizeText(res.date, 60);
       }
 
-      seenUrls.add(link);
+      // Check if location can be explicitly found from snippet or extensions
+      let locationInfo: string | undefined;
+      if (typeof res.rich_snippet === "object" && res.rich_snippet !== null) {
+        const rich = res.rich_snippet as Record<string, unknown>;
+        if (typeof rich.top === "object" && rich.top !== null) {
+          const top = rich.top as Record<string, unknown>;
+          if (Array.isArray(top.extensions)) {
+            const locExt = top.extensions.find((ext) => typeof ext === "string" && ext.length < 50);
+            if (locExt) {
+              locationInfo = sanitizeText(locExt, 80);
+            }
+          }
+        }
+      }
+
+      const hasConfirmedDate = Boolean(dateInfo && dateInfo.trim().length > 0);
+      const dateDisplay = hasConfirmedDate ? dateInfo! : "Date not confirmed";
+      const hasConfirmedLocation = Boolean(locationInfo && locationInfo.trim().length > 0);
+      const locationDisplay = hasConfirmedLocation ? locationInfo! : "Location unverified";
+
+      const category = classifyEvent(title, snippet);
+
+      const { score: relevanceScore, signals: relevanceSignals } = calculateRelevance(
+        {
+          title,
+          snippet,
+          dateInfo,
+          locationInfo,
+          originalUrl: link,
+          category,
+        },
+        criteria
+      );
+
+      seenUrls.add(cleanUrl);
       events.push({
         id: `disc-org-${events.length + 1}`,
         title,
-        snippet: snippet || "Visit original source for comprehensive event details and registration.",
+        snippet,
         originalUrl: link,
+        normalizedUrl: cleanUrl,
         displayedSource,
+        category,
         dateInfo,
+        hasConfirmedDate,
+        dateDisplay,
+        locationInfo,
+        hasConfirmedLocation,
+        locationDisplay,
+        relevanceScore,
+        relevanceSignals,
         isExternal: true,
       });
-
-      if (events.length >= limit) break;
     }
   }
+
+  // 3. Rank results using transparent, deterministic relevance signals
+  events.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+  // 4. Return top results capped by the requested limit
+  const finalEvents = events.slice(0, limit);
 
   return {
     success: true,
     searchQuery,
-    totalResults: events.length,
-    events,
+    totalResults: finalEvents.length,
+    events: finalEvents,
     disclaimer:
       "Google Search results are web discovery results, not verified event records. Please verify event dates, locations, and registration details on the source website.",
   };
@@ -266,12 +353,17 @@ export async function searchLiveEvents(
     }
 
     const json = await response.json();
-    return normalizeSerpApiResponse(json, query, effectiveLimit);
+    return normalizeSerpApiResponse(json, query, effectiveLimit, {
+      query: input.query,
+      location: input.location,
+      category: input.category,
+      date: input.date,
+    });
   } catch (error) {
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === "AbortError") {
-      throw new SerpApiTimeoutError("SerpApi search request timed out after 8 seconds.");
+      throw new SerpApiTimeoutError("SerpApi search request timed out after 12 seconds.");
     }
     if (error instanceof SerpApiConfigError || error instanceof SerpApiError) {
       throw error;

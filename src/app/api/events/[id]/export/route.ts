@@ -41,15 +41,24 @@ export async function GET(
       registeredAt: 1,
     });
 
-    // Format registrations into CSV string
+    // Format registrations into CSV string with formula injection protection
+    const sanitizeCsvCell = (val: string) => {
+      let clean = (val || "").replace(/"/g, '""');
+      if (/^[=+\-@\t\r]/.test(clean)) {
+        clean = `'${clean}`;
+      }
+      return `"${clean}"`;
+    };
+
     const headers = "Name,Email,Registration Date\n";
     const rows = registrations
       .map((reg) => {
-        // Escape quotes to maintain valid CSV syntax
-        const escapedName = reg.attendeeName.replace(/"/g, '""');
-        const escapedEmail = reg.attendeeEmail.replace(/"/g, '""');
-        const formattedDate = reg.registeredAt.toISOString().split("T")[0];
-        return `"${escapedName}","${escapedEmail}","${formattedDate}"`;
+        const escapedName = sanitizeCsvCell(reg.attendeeName);
+        const escapedEmail = sanitizeCsvCell(reg.attendeeEmail);
+        const formattedDate = sanitizeCsvCell(
+          reg.registeredAt.toISOString().split("T")[0]
+        );
+        return `${escapedName},${escapedEmail},${formattedDate}`;
       })
       .join("\n");
 

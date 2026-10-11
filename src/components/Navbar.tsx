@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
-  User,
   Plus,
   ChevronDown,
   LayoutDashboard,
@@ -12,6 +11,7 @@ import {
   Ticket,
   Compass,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -35,12 +35,21 @@ export default function Navbar() {
   return (
     <nav className="border-b border-neutral-900 bg-neutral-950/40 backdrop-blur-md px-6 py-4 flex items-center justify-between z-50 sticky top-0">
       {/* Brand logo */}
-      <Link
-        href="/"
-        className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
-      >
-        Luma
-      </Link>
+      <div className="flex items-center gap-6">
+        <Link
+          href="/"
+          className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
+        >
+          EventScout
+        </Link>
+        <Link
+          href="/discover"
+          className="text-sm font-medium text-neutral-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-neutral-900 border border-transparent hover:border-neutral-800 transition-all"
+        >
+          <Compass className="w-4 h-4 text-purple-400" />
+          <span>Discover</span>
+        </Link>
+      </div>
 
       <div className="flex items-center gap-4">
         {status === "loading" && (
@@ -147,6 +156,15 @@ export default function Navbar() {
                         </Link>
                       </>
                     )}
+
+                    <Link
+                      href="/discover"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg transition-all"
+                    >
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      Discover Live Events
+                    </Link>
 
                     <Link
                       href="/"

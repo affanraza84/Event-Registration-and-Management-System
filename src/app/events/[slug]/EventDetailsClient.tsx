@@ -16,6 +16,10 @@ import {
   Mail,
   User,
   ShieldAlert,
+  ExternalLink,
+  Globe,
+  Compass,
+  ShieldCheck,
 } from "lucide-react";
 import { registerForEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
@@ -32,6 +36,7 @@ interface EventDetailsClientProps {
     capacity: number;
     registrationDeadline: string;
     isClosed: boolean;
+    sourceUrl?: string;
   };
   initialIsRegistered: boolean;
   initialAttendeeCount: number;
@@ -167,6 +172,20 @@ export default function EventDetailsClient({
           {/* Left / Center Details (2 Columns) */}
           <div className="lg:col-span-2 space-y-6">
             <div className="space-y-4">
+              {/* Event Platform Status Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-950/60 border border-emerald-800/80 rounded-lg text-emerald-300 text-xs font-semibold">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Published Platform Event
+                </span>
+                {event.sourceUrl && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-950/50 border border-purple-800/50 rounded-lg text-purple-300 text-xs">
+                    <Compass className="w-3.5 h-3.5 text-purple-400" />
+                    Discovered via Web Search
+                  </span>
+                )}
+              </div>
+
               <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent">
                 {event.title}
               </h1>
@@ -184,6 +203,27 @@ export default function EventDetailsClient({
                   {event.location}
                 </div>
               </div>
+
+              {/* Source attribution callout */}
+              {event.sourceUrl && (
+                <div className="p-3.5 bg-neutral-900/60 border border-neutral-800 rounded-xl flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-neutral-300 truncate">
+                    <Globe className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span className="truncate">
+                      Original Discovery Source: <span className="font-mono text-purple-300">{event.sourceUrl}</span>
+                    </span>
+                  </div>
+                  <a
+                    href={event.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 font-semibold shrink-0 hover:underline"
+                  >
+                    <span>View Source Page</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-neutral-900 pt-6">

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Luma | Event Registration & Management System",
-  description: "Discover and manage amazing events near you.",
+  title: "EventScout | Live Event Discovery & Registration",
+  description: "Discover live tech events, hackathons, and gatherings across India, or host and manage your own experiences.",
 };
 
 export default function RootLayout({

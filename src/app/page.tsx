@@ -17,9 +17,9 @@ import Event from "@/models/Event";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Luma | Host Memorable Events & Gatherings",
+  title: "EventScout | Live Event Discovery & Registration",
   description:
-    "The elegant, all-in-one platform for creating event pages, collecting RSVPs, tracking attendee statistics, and hosting gatherings.",
+    "Discover live hackathons, tech meetups, and conferences across India powered by SerpApi, plus create and host your own community gatherings.",
 };
 
 export default async function Home() {
@@ -74,34 +74,35 @@ export default async function Home() {
       <header className="z-10 text-center max-w-4xl mx-auto px-6 pt-20 pb-16 flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-950/40 border border-purple-900/40 rounded-full text-purple-300 text-xs font-semibold mb-6 animate-fade-in">
           <Sparkles className="w-3.5 h-3.5" />
-          The elegant way to host gatherings
+          Live Event Discovery & Management
         </div>
 
         <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
-          Delightful events,{" "}
+          Discover live events,{" "}
           <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent">
-            effortless RSVPs.
+            host gatherings.
           </span>
         </h1>
 
         <p className="text-lg sm:text-xl text-neutral-400 font-light max-w-2xl leading-relaxed mb-8">
-          Luma helps you create beautiful event pages, securely manage attendee lists, track analytics, and export registrations in seconds.
+          EventScout helps you scout upcoming tech meetups, hackathons, and conferences across India in real-time, plus create and host your own community events.
         </p>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
           <Link
-            href="/signup"
+            href="/discover"
             className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all shadow-xl shadow-purple-950/30 hover:scale-[1.02] active:scale-[0.98]"
           >
-            Host Your First Event
+            <Compass className="w-5 h-5" />
+            Discover Live Events
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/login"
+            href="/signup"
             className="flex items-center justify-center gap-2 px-8 py-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            Browse Attendees
+            Host an Event
           </Link>
         </div>
       </header>
@@ -259,10 +260,10 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left space-y-2">
             <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-              Luma
+              EventScout
             </span>
             <p className="text-neutral-500 text-xs">
-              &copy; {new Date().getFullYear()} Luma. All rights reserved. Foundation & Event Modules.
+              &copy; {new Date().getFullYear()} EventScout. Live Event Discovery & Management Platform.
             </p>
           </div>
 

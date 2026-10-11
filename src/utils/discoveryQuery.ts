@@ -38,7 +38,12 @@ export function buildDiscoveryQuery(input: DiscoveryQueryInput): string {
   if (rawCategory && rawQuery) {
     const categoryLower = rawCategory.toLowerCase();
     const queryLower = rawQuery.toLowerCase();
-    if (queryLower.includes(categoryLower)) {
+    const categoryWords = categoryLower.split(/\s+/).filter(Boolean);
+    const allWordsPresent =
+      categoryWords.length > 0 &&
+      categoryWords.every((w) => queryLower.includes(w));
+
+    if (queryLower.includes(categoryLower) || allWordsPresent) {
       subject = rawQuery;
     } else {
       subject = `${rawCategory} ${rawQuery}`;

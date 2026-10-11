@@ -15,6 +15,16 @@ export const eventCreationSchema = z
       .int()
       .positive("Capacity must be a positive integer"),
     registrationDeadline: z.string().min(1, "Registration deadline is required"),
+    sourceUrl: z
+      .string()
+      .trim()
+      .url("Source URL must be a valid URL")
+      .refine(
+        (url) => !url || /^https?:\/\//i.test(url),
+        "Source URL must use http or https protocol"
+      )
+      .optional()
+      .or(z.literal("")),
   })
   .refine(
     (data) => {

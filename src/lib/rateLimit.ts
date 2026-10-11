@@ -52,7 +52,7 @@ export async function checkRateLimit(
       await RateLimit.findOneAndUpdate(
         { key },
         { count: 1, expiresAt },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
       );
 
       return {
@@ -81,7 +81,7 @@ export async function checkRateLimit(
     const updated = await RateLimit.findOneAndUpdate(
       { key },
       { $inc: { count: 1 } },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     const count = updated?.count ?? existing.count + 1;

@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       capacity,
       registrationDeadline: new Date(registrationDeadline),
       hostId: new mongoose.Types.ObjectId(session.user.id),
+      sourceUrl: validated.data.sourceUrl || undefined,
       attendeeCount: 0,
       isClosed: false,
     });

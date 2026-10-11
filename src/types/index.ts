@@ -34,6 +34,7 @@ export interface IEvent {
   registrationDeadline: Date;
   isClosed: boolean;
   hostId: Types.ObjectId;
+  sourceUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
