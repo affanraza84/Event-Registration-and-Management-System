@@ -1,54 +1,177 @@
-# Luma Event Registration & Management System
+# EventScout — Live Event Discovery & Registration Platform
 
-A production-grade, SaaS-style Event Registration & Management System inspired by Luma. Built using Next.js 15+ (App Router), React 19, TypeScript, Tailwind CSS v4, and MongoDB.
+> **SerpApi India Hackathon 2026 Project Submission**  
+> Repository: [https://github.com/affanraza84/Event-Registration-and-Management-System](https://github.com/affanraza84/Event-Registration-and-Management-System)
 
----
-
-## 🚀 Live Demo & Key Objectives
-This application provides two distinct portals:
-1. **Hosts**: Create events (with customized capacities and deadlines), close RSVPs, track attendee analytics in real-time, search/filter registrations, and download attendee sheets via secure CSV exports.
-2. **Attendees**: Browse public meetups, register for tickets instantly (automatically creating an account if guest), and manage active RSVP tickets with cancellation releases from a personalized dashboard.
+EventScout evolves an event registration and RSVP management system into a live event discovery engine. Powered by the official SerpApi Google Search API, EventScout enables tech enthusiasts, student developers, and community organizers across India and globally to scout upcoming hackathons, tech meetups, and conferences in real time, inspect original sources, and convert verified opportunities into platform events with native RSVP capacity management and attendee tracking.
 
 ---
 
-## ✨ Features Implemented
+## 📌 Submission Links & Demonstrations
 
-### 1. Unified Authentication (NextAuth.js)
-* Custom credentials provider that handles both **Hosts** and **Attendees** from separate databases.
-* Passwords are never stored in plain text and are hashed using `bcrypt` (12 rounds).
-* Custom NextAuth callbacks extend the session payloads to securely include user `id` and `role` client-side.
-
-### 2. Event Management (Host Panel)
-* **Creation**: Host forms with title, description, date, time, location, capacity, and deadlines.
-* **Slug Generation**: Formats titles into URL-friendly strings (e.g. `Meetup 2026` -> `meetup-2026`) and auto-appends counters (e.g. `meetup-2026-1`) to resolve database collisions.
-* **Date Constraints**: Enforces that event date/time and registration deadlines must be set in the future, and the deadline must occur on or before the event date.
-* **Close Event**: Hosts can manually close registrations to block future RSVPs.
-* **Delete Event**: Cascade deletes the event and all associated registrations with a security confirmation modal.
-
-### 3. Dynamic Registration (RSVP System)
-* **Zero-friction RSVP**: If a user is not logged in, they can input their Name, Email, and Password. The system validates inputs using Zod, creates their Attendee account, logs them in, and RSVPs them in a single step.
-* **Double RSVP Prevention**: Compound database indexes and backend logic prevent a user from registering twice for the same event.
-* **Capacity Limits**: Atomically checks capacity before creating tickets. Displays "Registration Closed" and disables forms once full.
-* **Deadline Guards**: Automatically blocks API-level and client-side registrations once the deadline passes.
-* **Attendee Dashboard**: Lists all active tickets, registration dates, and location details. Includes a custom modal dialog for RSVP cancellation to release slot capacity.
-
-### 4. Search, Filter & CSV Export
-* **TanStack Table**: Powering the Host's attendee directory with client-side sorting and pagination.
-* **Search & Filters**: Search attendees by Name/Email, and filter by Event title or Registration Date.
-* **CSV Export**:
-  * **Table-Wide**: Exports the currently filtered table client-side.
-  * **Event-Specific**: Protected server-side endpoint `GET /api/events/[id]/export` that verifies Host ownership before generating and streaming the CSV file. Passwords/hashes are strictly excluded.
+* **Live Deployed Application**: `https://eventscout.yourdomain.com` *(Replace with your live deployment URL)*
+* **Video Demonstration (< 3 min)**: `https://youtube.com/watch?v=...` *(Replace with your video URL)*
+* **Source Repository**: [https://github.com/affanraza84/Event-Registration-and-Management-System](https://github.com/affanraza84/Event-Registration-and-Management-System)
 
 ---
 
-## 🛠️ Tech Stack
+## 💡 Purpose & Target Users
 
-* **Framework**: Next.js 16.2 (App Router)
-* **Frontend**: React 19, Tailwind CSS v4, Lucide Icons, TanStack Table v8
-* **Database & ORM**: MongoDB Atlas, Mongoose
-* **Authentication**: NextAuth.js, bcrypt
-* **Validation**: Zod, React Hook Form, `@hookform/resolvers`
-* **Development**: TypeScript (Strict Mode), ESLint
+### The Problem
+Finding and managing technology events today is broken:
+1. **Platform Fragmentation**: Organizers post events across disconnected platforms (Devfolio, Unstop, Meetup, Eventbrite, Lu.ma, GDG, MLH, university portals). Users must search multiple directories manually.
+2. **The Verification Trap**: Ordinary web searches return mixed blog posts, expired listings, and unverified dates with no reliable way to confirm attendee capacity or RSVP.
+3. **The Disconnect**: Discovery tools do not provide registration tools, and registration tools lack live discovery.
+
+### The EventScout Solution
+EventScout bridges the gap:
+* **For Attendees & Hackers**: Search live Google Search results via SerpApi tailored for specific cities (e.g. *Ranchi*, *Bengaluru*, *Delhi NCR*), inspect original sources, view evidence-based categories, and register for official platform events.
+* **For Community Hosts**: Scout external gatherings, convert discovered opportunities into editable unverified drafts, verify dates and venue details, set attendee capacity, and manage registrations with real-time analytics and CSV exports.
+
+---
+
+## 🔍 How Live SerpApi Search Powers EventScout
+
+EventScout integrates with the official **SerpApi Google Search API** (`https://serpapi.com/search.json`) through a secure, server-side pipeline:
+
+1. **Intelligent Query Formulation**: Transforms user topics, target cities, and dates into natural search queries (e.g. `upcoming AI meetups and hackathons in Ranchi October 2026`).
+2. **Safe URL Normalization & Deduplication**: Strips tracking artifacts (`utm_*`, `fbclid`, `gclid`, `ref`, etc.) and protocol inconsistencies. Identical event pages appearing in Google rich carousels (`events_results`) and web listings (`organic_results`) are deduplicated.
+3. **Deterministic Relevance Scoring**: Ranks events based on auditable signals:
+   * Title keyword match (`+25`) & description snippet match (`+10`)
+   * Location in title/venue (`+25`) & description mention (`+15`)
+   * Category match (`+20`)
+   * Verified event date present (`+15`)
+   * Recognized event domain bonus (`+10`)
+4. **Evidence-Based Categorization**: Assigns one of four categories *only* when explicit keyword evidence exists, falling back strictly to `"Unclassified"`:
+   * `Hackathons and competitions`
+   * `Meetups and networking`
+   * `Conferences and workshops`
+   * `Student and campus events`
+5. **Zero-Hallucination Policy**:
+   * If a date is not confirmed in search metadata, displays **"Date not confirmed"** with an amber indicator.
+   * If venue is not confirmed, displays **"Location unverified"**.
+   * Preserves the original source URL on every card with direct external navigation.
+
+---
+
+## 🔄 How Discovery Connects to Platform Registration
+
+EventScout connects external discovery to the platform's host drafting and RSVP workflow:
+
+```mermaid
+flowchart TD
+    subgraph Discovery ["1. Live Event Discovery (/discover)"]
+        A["User searches: 'AI meetups in Ranchi'"] --> B["SerpApi Google Search API"]
+        B --> C["Normalize, Deduplicate & Rank Results"]
+        C --> D["Display Event Cards with Verification Badges"]
+    end
+
+    subgraph Evaluation ["2. Source Review & Draft Eligibility"]
+        D -->|User reviews original page| E["External Source Website (Devfolio, Meetup, etc.)"]
+        D --> F{"Eligible for Draft?"}
+        F -->|Sparse / Missing URL| G["Pill: 'Incomplete for Draft'"]
+        F -->|Valid Title, Snippet & URL| H["Action: 'Use Details to Create Event'"]
+        H --> I["Draft Preparation Modal Preview"]
+    end
+
+    subgraph HostReview ["3. Host Review & Verification (/events/new)"]
+        I -->|Authenticated Host| J["CreateEventForm (Pre-filled Draft)"]
+        J --> K["Amber Banner: Unverified Imported Draft"]
+        K --> L["Host enters missing date, venue, capacity & deadline"]
+        L --> M["Mandatory Host Verification Confirmation Checkbox"]
+        M --> N["Submit: Create & Publish Event"]
+    end
+
+    subgraph Registration ["4. Native Platform RSVP (/events/:slug)"]
+        N --> O["Published Platform Event with sourceUrl Attribution"]
+        O --> P["Attendee RSVP Ticket Form"]
+        P --> Q["Atomic Capacity Check & Compound Unique Index"]
+        Q --> R["Host Dashboard: Attendee Table & Formula-Safe CSV Export"]
+        Q --> S["Attendee Dashboard: View Tickets & Cancel RSVP"]
+    end
+```
+
+1. **Review**: The user inspects the external search result and verifies facts on the original source website.
+2. **Eligibility Guard**: The system evaluates if the result has sufficient data (`evaluateDraftEligibility`). Incomplete or malformed entries are disabled.
+3. **Draft Preparation**: Clicking **"Use Details to Create Event"** displays an informative modal highlighting unverified fields and routes to `/events/new`.
+4. **Host Authorization**: Only registered hosts can review and publish drafts. Unauthenticated users are redirected to login with preserved callback state.
+5. **Unverified Draft Review**: The host reviews pre-filled title, description, and source link, manually fills missing dates/venues/capacities, checks the verification confirmation, and submits.
+6. **Native RSVP Registration**: Once published in MongoDB, attendees can RSVP with real-time capacity checks (`attendeeCount < capacity`), duplicate RSVP prevention, and cancellation slot releases.
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+graph LR
+    Client["Client Browser (React 19 / Tailwind CSS v4)"]
+    NextServer["Next.js 16 App Router (Server Actions & Route Handlers)"]
+    SerpApi["SerpApi Google Search API (search.json)"]
+    Mongo["MongoDB Atlas (Events, Attendees, Hosts, Registrations, Rate Limits)"]
+
+    Client -->|Search Query| NextServer
+    NextServer -->|Check Rate Limit (20 req/min)| Mongo
+    NextServer -->|Server-Side Request with SERPAPI_API_KEY| SerpApi
+    SerpApi -->|Raw Google Search JSON| NextServer
+    NextServer -->|Normalized, Deduplicated & Ranked Events| Client
+
+    Client -->|Submit Draft / Register RSVP| NextServer
+    NextServer -->|Atomic Transaction / Query| Mongo
+```
+
+---
+
+## ⚡ Main Features
+
+### 1. Live Web Discovery (`/discover`)
+* Real-time search by keyword topic, city/location, category, and date.
+* Quick-pick buttons for Indian tech hubs (*Ranchi*, *Bengaluru*, *Delhi NCR*, *Mumbai*, *Hyderabad*, *Pune*, *Kolkata*).
+* Suggested search queries for instant discovery.
+* Multi-state UI: Loading skeleton with spinner, empty results, network errors, validation errors, and active result counts.
+* Client-side category filtering with live count badges.
+
+### 2. Event Intelligence & Ranking
+* Normalized URL deduplication across Google Carousel and organic search results.
+* Transparent relevance signals on every card (e.g. `Keyword match in title • Location matched: Ranchi`).
+* Verified date indicator vs `Date not confirmed` clock badge.
+* Preserved original source URL link on every result card.
+
+### 3. Host Event Management (`/events/new`, `/dashboard`)
+* Draft preparation from external discovery results with source attribution (`sourceUrl`).
+* Slug generator with automatic collision resolution (`byamn-meetup-2026-1`).
+* Unverified imported draft banner and host verification confirmation checkbox.
+* Date constraints: Event dates and registration deadlines must be in the future, with deadline $\le$ event date.
+* Host dashboard powered by TanStack Table with search, event filters, attendee counts, and capacity progress bars.
+* CSV export with spreadsheet formula injection protection.
+
+### 4. Attendee RSVP & Management (`/events/:slug`, `/my-events`)
+* One-step RSVP: Guest attendees can provide name, email, and password to create an account, log in, and register simultaneously.
+* Double-RSVP prevention via compound database index `{ eventId, attendeeId }`.
+* Atomic capacity allocation with automatic closure when full.
+* Attendee dashboard to view tickets and cancel RSVPs to release capacity.
+
+---
+
+## ⚠️ Known Limitations
+
+1. **SerpApi Quota Dependency**: Live web discovery relies on SerpApi account query credits. When exhausted, the endpoint returns a clear 429 error without crashing.
+2. **Third-Party Data Accuracy**: External event organizers may alter dates or venues on third-party sites. EventScout therefore mandates host review before publication and labels unconfirmed fields clearly.
+3. **No Direct Web Scraping**: In strict compliance with security best practices, EventScout does not bypass access controls or scrape private external pages beyond official SerpApi Google Search API results.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| **Framework** | Next.js 16.2.7 (App Router, Turbopack, Server Actions) |
+| **Frontend** | React 19.2.4, Tailwind CSS v4, Lucide React, TanStack Table v8 |
+| **Discovery Service** | Official SerpApi Google Search API (`engine=google`) |
+| **Database & ORM** | MongoDB Atlas, Mongoose 9.6.3 |
+| **Authentication** | NextAuth.js 4.24, bcrypt (cost factor 12) |
+| **Validation** | Zod 4.4, React Hook Form, `@hookform/resolvers` |
+| **Testing** | Node.js Test Runner (`tsx --test`) |
+| **Language** | TypeScript 5 (Strict Mode), ESLint 9 |
 
 ---
 
@@ -56,7 +179,8 @@ This application provides two distinct portals:
 
 ### 1. Prerequisites
 * [Node.js](https://nodejs.org) (v18.17+ or v20+)
-* [MongoDB](https://www.mongodb.com/try/download/community) (Local instance or Atlas account URI)
+* [MongoDB](https://www.mongodb.com/try/download/community) (Local instance or MongoDB Atlas connection string)
+* [SerpApi Account & API Key](https://serpapi.com)
 
 ### 2. Clone the Repository
 ```bash
@@ -70,161 +194,74 @@ npm install
 ```
 
 ### 4. Configure Environment Variables
-Create a `.env.local` file in the root folder:
+Copy the template to `.env.local`:
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
 ```env
-# MongoDB Connection URI
-MONGODB_URI=mongodb://127.0.0.1:27017/event-registry
+# MongoDB Connection String
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/eventscout?retryWrites=true&w=majority
 
 # NextAuth Configuration
-NEXTAUTH_SECRET=your_generated_secret_here # Generate with: openssl rand -base64 32
+NEXTAUTH_SECRET=your_32_character_secret_here # Generate via: openssl rand -base64 32
 NEXTAUTH_URL=http://localhost:3000
 
-# SerpApi Configuration (Server-Side Only)
-SERPAPI_API_KEY=your_serpapi_api_key_here
+# SerpApi Key (Server-Side Only - NEVER prefix with NEXT_PUBLIC)
+SERPAPI_API_KEY=your_private_serpapi_api_key_here
 ```
 
-### 5. Run the Application
+### 5. How to Obtain a SerpApi API Key
+1. Visit [serpapi.com](https://serpapi.com) and create a free account.
+2. Navigate to your **Dashboard** -> **API Key**.
+3. Copy your private 64-character hex key.
+4. Paste it into `.env.local` as `SERPAPI_API_KEY`.
+
+### 6. Run the Application
 ```bash
-# Start Next.js development server
+# Start development server
 npm run dev
 
-# Run automated tests
+# Open application in browser
+open http://localhost:3000
+```
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+EventScout includes unit and integration tests executed using the Node.js test runner:
+
+```bash
+# Run automated test suite
 npm test
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+* **Test Suites**: 23 suites, **68 tests passing**, 0 failing.
+* **Coverage**: URL normalization, tracking stripping, duplicate removal, relevance scoring, evidence-based categorization, draft eligibility, date extraction, schema validation, rate-limiting, and CSV formula sanitization.
+
+```bash
+# Run linter
+npm run lint
+
+# Build for production
+npm run build
+```
+* **Linting**: 0 errors.
+* **Build**: Successfully compiles with Turbopack, full TypeScript type safety, and static page generation across all 11 application routes.
 
 ---
 
-## 🔌 API Documentation
+## 🔒 Security & Reliability Considerations
 
-### 1. POST `/api/events`
-* **Description**: Create a new event.
-* **Authorization**: Host Session Required.
-* **Payload**:
-  ```json
-  {
-    "title": "Byamn Dev Meetup 2026",
-    "description": "Gathering of developers in SF.",
-    "date": "2026-08-15",
-    "time": "18:00",
-    "location": "San Francisco, CA",
-    "capacity": 100,
-    "registrationDeadline": "2026-08-14"
-  }
-  ```
-* **Response (201)**:
-  ```json
-  {
-    "success": true,
-    "event": {
-      "id": "603d...",
-      "slug": "byamn-dev-meetup-2026",
-      "title": "Byamn Dev Meetup 2026"
-    }
-  }
-  ```
-
-### 2. GET `/api/events/[slug]`
-* **Description**: Publicly fetch metadata for a single event.
-* **Authorization**: None (Public).
-* **Response (200)**:
-  ```json
-  {
-    "success": true,
-    "event": {
-      "_id": "603d...",
-      "title": "Byamn Dev Meetup 2026",
-      "slug": "byamn-dev-meetup-2026",
-      "capacity": 100,
-      "attendeeCount": 5
-    }
-  }
-  ```
-
-### 3. POST `/api/events/[id]/register`
-* **Description**: Register an attendee for an event.
-* **Authorization**: None (creates user if new, authenticates password if existing).
-* **Payload**:
-  ```json
-  {
-    "name": "Jane Doe",
-    "email": "jane@example.com",
-    "password": "securepassword123"
-  }
-  ```
-* **Response (211)**:
-  ```json
-  {
-    "success": true,
-    "registration": {
-      "id": "604e...",
-      "eventId": "603d...",
-      "attendeeId": "604a..."
-    }
-  }
-  ```
-
-### 4. DELETE `/api/registration/[id]`
-* **Description**: Cancel registration and release slot.
-* **Authorization**: Session Required (Must be the attendee owner or event host).
-* **Response (200)**:
-  ```json
-  {
-    "success": true
-  }
-  ```
-
-### 5. GET `/api/events/[id]/export`
-* **Description**: Exports all registration attendees as a CSV spreadsheet file.
-* **Authorization**: Host Session Required (Must own the event).
-* **Response (200)**: Streams `text/csv` formatted data containing Name, Email, and Registration Date columns.
-
-### 6. GET & POST `/api/discover`
-* **Description**: Live web-based event discovery powered by SerpApi Google Search API.
-* **Authorization**: Public (Rate-limited: 20 req/min per IP via distributed MongoDB TTL rate limiter).
-* **Parameters (Query or JSON Body)**:
-  * `query` (optional): Search topic or keyword (e.g., `"AI meetups and hackathons"`, `"web3 summit"`).
-  * `location` / `city` (optional): Target city or region (e.g., `"Ranchi"`, `"Bengaluru"`, `"India"`).
-  * `category` (optional): Event classification (e.g., `"AI"`, `"Hackathons"`, `"Tech"`).
-  * `date` (optional): Natural date modifier (e.g., `"October 2026"`, `"this weekend"`).
-  * `limit` (optional): Max results between 1 and 20 (defaults to 10).
-* **Response (200)**:
-  ```json
-  {
-    "success": true,
-    "searchQuery": "upcoming AI meetups and hackathons in Ranchi October 2026",
-    "totalResults": 2,
-    "events": [
-      {
-        "id": "disc-org-1",
-        "title": "Ranchi AI & Web3 Hackathon 2026",
-        "snippet": "Join top developers in Ranchi for 48 hours of AI coding and mentorship.",
-        "originalUrl": "https://devfolio.co/hackathons/ranchi-ai-2026",
-        "displayedSource": "devfolio.co",
-        "dateInfo": "Oct 15, 2026",
-        "isExternal": true
-      }
-    ],
-    "disclaimer": "Google Search results are web discovery results, not verified event records. Please verify event details on the source website."
-  }
-  ```
+* **API Key Exclusivity**: `SERPAPI_API_KEY` is strictly confined to server-side execution. It is never exposed in client bundles, responses, logs, or `NEXT_PUBLIC` variables.
+* **Distributed Rate Limiting**: `/api/discover` enforces 20 requests per minute per IP using a MongoDB TTL collection (`RateLimit`), with automatic in-memory fallback.
+* **Safe External Linking**: All outgoing external links enforce `target="_blank"` and `rel="noopener noreferrer"` to prevent reverse tab-nabbing.
+* **Protocol Whitelisting**: `sourceUrl` validation strictly permits `http://` and `https://` schemes, rejecting `javascript:` or `data:` URLs.
+* **CSV Injection Defense**: CSV exports neutralize formula execution triggers (`=`, `+`, `-`, `@`) by prepending `'` and escaping quotes.
+* **Atomic Capacity Enforcement**: Conditional database updates (`attendeeCount < capacity`) prevent race conditions and overbooking.
 
 ---
 
-## 🌐 Deployment Guide
-
-### MongoDB Atlas Configuration
-1. Sign up/log in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Create a free cluster and database named `event-registry`.
-3. Under **Database Access**, create a user with read/write privileges.
-4. Under **Network Access**, whitelist `0.0.0.0/0` (allow connections from anywhere) to let Vercel connect.
-5. Retrieve your cluster connection string (e.g., `mongodb+srv://<user>:<password>@cluster0.mongodb.net/event-registry?retryWrites=true&w=majority`).
-
-### Vercel Deployment
-1. Log in to [Vercel](https://vercel.com) and link your GitHub repository.
-2. Under **Environment Variables**, add:
-   * `MONGODB_URI` (your Atlas cluster string)
-   * `NEXTAUTH_SECRET` (generate a secure 32-character string)
-   * `NEXTAUTH_URL` (your deployed Vercel domain URL, e.g. `https://my-luma-app.vercel.app`)
-   * `SERPAPI_API_KEY` (your private SerpApi API key)
-3. Click **Deploy**. Vercel will build the Turbopack production bundle and serve it globally.
+## 📄 License
+This project is open-source under the MIT License.
