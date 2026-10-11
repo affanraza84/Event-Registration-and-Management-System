@@ -9,8 +9,8 @@ EventScout evolves an event registration and RSVP management system into a live 
 
 ## 📌 Submission Links & Demonstrations
 
-* **Live Deployed Application**: `https://eventscout.yourdomain.com` *(Replace with your live deployment URL)*
-* **Video Demonstration (< 3 min)**: `https://youtube.com/watch?v=...` *(Replace with your video URL)*
+* **Live Deployed Application**: `https://event-registration-and-management-s-two.vercel.app/discover` *(Replace with your live deployment URL)*
+* **Video Demonstration (< 3 min)**: `https://drive.google.com/file/d/1rn4ueuQL3_ao8au-0jSxbnie5RJ3NnwM/view?usp=sharing` *(Replace with your video URL)*
 * **Source Repository**: [https://github.com/affanraza84/Event-Registration-and-Management-System](https://github.com/affanraza84/Event-Registration-and-Management-System)
 
 ---
