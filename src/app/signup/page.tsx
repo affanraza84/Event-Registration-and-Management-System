@@ -65,11 +65,11 @@ export default function SignupPage() {
       if (loginResult?.error) {
         // Fallback: send them to login page if auto-login failed
         setStatusMsg("Redirecting to login...");
-        window.location.href = `/login?registered=true&email=${encodeURIComponent(data.email)}`;
+        router.push(`/login?registered=true&email=${encodeURIComponent(data.email)}`);
       } else {
-        // Full page reload redirect to clear client router cache and ensure middleware updates
         setStatusMsg("Login successful! Redirecting...");
-        window.location.href = data.role === "host" ? "/events/new" : "/my-events";
+        router.refresh();
+        router.push(data.role === "host" ? "/events/new" : "/my-events");
       }
     } catch {
       setGlobalError("An unexpected error occurred. Please try again.");

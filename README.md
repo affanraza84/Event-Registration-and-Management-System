@@ -76,14 +76,20 @@ Create a `.env.local` file in the root folder:
 MONGODB_URI=mongodb://127.0.0.1:27017/event-registry
 
 # NextAuth Configuration
-NEXTAUTH_SECRET=35c8b74c2e6f49e491c1075d9e5f58c42661849a60e659b8d2b9921da8a61ff0
+NEXTAUTH_SECRET=your_generated_secret_here # Generate with: openssl rand -base64 32
 NEXTAUTH_URL=http://localhost:3000
+
+# SerpApi Configuration (Server-Side Only)
+SERPAPI_API_KEY=your_serpapi_api_key_here
 ```
 
 ### 5. Run the Application
 ```bash
 # Start Next.js development server
 npm run dev
+
+# Run automated tests
+npm test
 ```
 Open [http://localhost:3000](http://localhost:3000) to view the application.
 
@@ -173,6 +179,36 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 * **Authorization**: Host Session Required (Must own the event).
 * **Response (200)**: Streams `text/csv` formatted data containing Name, Email, and Registration Date columns.
 
+### 6. GET & POST `/api/discover`
+* **Description**: Live web-based event discovery powered by SerpApi Google Search API.
+* **Authorization**: Public (Rate-limited: 20 req/min per IP via distributed MongoDB TTL rate limiter).
+* **Parameters (Query or JSON Body)**:
+  * `query` (optional): Search topic or keyword (e.g., `"AI meetups and hackathons"`, `"web3 summit"`).
+  * `location` / `city` (optional): Target city or region (e.g., `"Ranchi"`, `"Bengaluru"`, `"India"`).
+  * `category` (optional): Event classification (e.g., `"AI"`, `"Hackathons"`, `"Tech"`).
+  * `date` (optional): Natural date modifier (e.g., `"October 2026"`, `"this weekend"`).
+  * `limit` (optional): Max results between 1 and 20 (defaults to 10).
+* **Response (200)**:
+  ```json
+  {
+    "success": true,
+    "searchQuery": "upcoming AI meetups and hackathons in Ranchi October 2026",
+    "totalResults": 2,
+    "events": [
+      {
+        "id": "disc-org-1",
+        "title": "Ranchi AI & Web3 Hackathon 2026",
+        "snippet": "Join top developers in Ranchi for 48 hours of AI coding and mentorship.",
+        "originalUrl": "https://devfolio.co/hackathons/ranchi-ai-2026",
+        "displayedSource": "devfolio.co",
+        "dateInfo": "Oct 15, 2026",
+        "isExternal": true
+      }
+    ],
+    "disclaimer": "Google Search results are web discovery results, not verified event records. Please verify event details on the source website."
+  }
+  ```
+
 ---
 
 ## 🌐 Deployment Guide
@@ -190,4 +226,5 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
    * `MONGODB_URI` (your Atlas cluster string)
    * `NEXTAUTH_SECRET` (generate a secure 32-character string)
    * `NEXTAUTH_URL` (your deployed Vercel domain URL, e.g. `https://my-luma-app.vercel.app`)
+   * `SERPAPI_API_KEY` (your private SerpApi API key)
 3. Click **Deploy**. Vercel will build the Turbopack production bundle and serve it globally.
