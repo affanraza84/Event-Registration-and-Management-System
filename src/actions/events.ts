@@ -11,6 +11,7 @@ import { getUniqueSlug } from "@/utils/slug";
 import { eventCreationSchema } from "@/validations/event";
 import mongoose from "mongoose";
 import { IEvent } from "@/types";
+import { deleteCloudinaryAsset } from "@/lib/cloudinary";
 
 /**
  * Server Action for Host to create a new event.
@@ -56,6 +57,8 @@ export async function createEventAction(data: unknown) {
       registrationDeadline: new Date(registrationDeadline),
       hostId: new mongoose.Types.ObjectId(session.user.id),
       sourceUrl: validated.data.sourceUrl || undefined,
+      imageUrl: validated.data.imageUrl || undefined,
+      imagePublicId: validated.data.imagePublicId || undefined,
       attendeeCount: 0,
       isClosed: false,
     });
@@ -332,6 +335,11 @@ export async function deleteEventAction(eventId: string) {
       return { error: "Unauthorized: You do not own this event" };
     }
 
+    // If event has an uploaded Cloudinary poster, safely delete it
+    if (event.imagePublicId) {
+      await deleteCloudinaryAsset(event.imagePublicId);
+    }
+
     // Delete the event
     await Event.findByIdAndDelete(eventId);
 
@@ -343,6 +351,77 @@ export async function deleteEventAction(eventId: string) {
     console.error("Delete event error:", error);
     const errorMessage =
       error instanceof Error ? error.message : "An unexpected error occurred during event deletion";
+    return {
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Server Action for Host to update an existing event and manage poster replacement.
+ */
+export async function updateEventAction(eventId: string, data: unknown) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "host") {
+      return { error: "Unauthorized: Only hosts can edit events" };
+    }
+
+    const validated = eventCreationSchema.safeParse(data);
+    if (!validated.success) {
+      const errorMessage = validated.error.issues
+        .map((err) => err.message)
+        .join(", ");
+      return { error: errorMessage };
+    }
+
+    await connectToDatabase();
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    if (event.hostId.toString() !== session.user.id) {
+      return { error: "Unauthorized: You do not own this event" };
+    }
+
+    const oldPublicId = event.imagePublicId;
+    const newPublicId = validated.data.imagePublicId || undefined;
+    const newImageUrl = validated.data.imageUrl || undefined;
+
+    // If poster changed, safely clean up old Cloudinary asset
+    if (oldPublicId && newPublicId !== oldPublicId) {
+      await deleteCloudinaryAsset(oldPublicId);
+    }
+
+    event.title = validated.data.title;
+    event.description = validated.data.description;
+    event.date = new Date(validated.data.date);
+    event.time = validated.data.time;
+    event.location = validated.data.location;
+    event.capacity = validated.data.capacity;
+    event.registrationDeadline = new Date(validated.data.registrationDeadline);
+    event.sourceUrl = validated.data.sourceUrl || undefined;
+    event.imageUrl = newImageUrl;
+    event.imagePublicId = newPublicId;
+
+    await event.save();
+
+    return {
+      success: true,
+      event: {
+        id: event._id.toString(),
+        slug: event.slug,
+        title: event.title,
+        imageUrl: event.imageUrl,
+      },
+    };
+  } catch (error: unknown) {
+    console.error("Update event error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred during event update";
     return {
       error: errorMessage,
     };
@@ -390,6 +469,10 @@ export async function getHostDashboardDataAction() {
       attendeeCount: ev.attendeeCount,
       registrationDeadline: ev.registrationDeadline.toISOString(),
       isClosed: ev.isClosed,
+      description: ev.description,
+      sourceUrl: ev.sourceUrl || undefined,
+      imageUrl: ev.imageUrl || undefined,
+      imagePublicId: ev.imagePublicId || undefined,
     }));
 
     const serializedRegistrations = registrations.map((reg) => {

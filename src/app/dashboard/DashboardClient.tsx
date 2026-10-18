@@ -12,6 +12,7 @@ import {
   createColumnHelper,
   SortingState,
 } from "@tanstack/react-table";
+import Image from "next/image";
 import {
   Calendar,
   Users,
@@ -27,9 +28,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Edit3,
 } from "lucide-react";
-import { closeEventAction, deleteEventAction } from "@/actions/events";
+import { closeEventAction, deleteEventAction, updateEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
+import ImageUpload from "@/components/ImageUpload";
+import { getEventCover } from "@/lib/eventCovers";
 
 interface EventItem {
   id: string;
@@ -42,6 +46,10 @@ interface EventItem {
   attendeeCount: number;
   registrationDeadline: string;
   isClosed: boolean;
+  description?: string;
+  sourceUrl?: string;
+  imageUrl?: string;
+  imagePublicId?: string;
 }
 
 interface RegistrationItem {
@@ -97,6 +105,24 @@ export default function DashboardClient({
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Edit Event Modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<EventItem | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    date: "",
+    time: "",
+    location: "",
+    capacity: 50,
+    registrationDeadline: "",
+    sourceUrl: "",
+    imageUrl: "",
+    imagePublicId: "",
+  });
+  const [isUploadingEditPoster, setIsUploadingEditPoster] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Sorting state for TanStack Table
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -191,6 +217,71 @@ export default function DashboardClient({
       }
     } catch {
       setActionError("Failed to delete the event. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Event Edit handlers
+  const handleOpenEditModal = (event: EventItem) => {
+    setEventToEdit(event);
+    setEditForm({
+      title: event.title,
+      description: event.description || "",
+      date: event.date ? event.date.split("T")[0] : "",
+      time: event.time || "",
+      location: event.location,
+      capacity: event.capacity,
+      registrationDeadline: event.registrationDeadline
+        ? event.registrationDeadline.split("T")[0]
+        : "",
+      sourceUrl: event.sourceUrl || "",
+      imageUrl: event.imageUrl || "",
+      imagePublicId: event.imagePublicId || "",
+    });
+    setEditError(null);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEditEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventToEdit) return;
+
+    setIsProcessing(true);
+    setEditError(null);
+
+    try {
+      const result = await updateEventAction(eventToEdit.id, editForm);
+      if (result.error) {
+        setEditError(result.error);
+      } else {
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === eventToEdit.id
+              ? {
+                  ...ev,
+                  title: editForm.title,
+                  description: editForm.description,
+                  date: new Date(editForm.date).toISOString(),
+                  time: editForm.time,
+                  location: editForm.location,
+                  capacity: editForm.capacity,
+                  registrationDeadline: new Date(
+                    editForm.registrationDeadline
+                  ).toISOString(),
+                  sourceUrl: editForm.sourceUrl,
+                  imageUrl: editForm.imageUrl || undefined,
+                  imagePublicId: editForm.imagePublicId || undefined,
+                }
+              : ev
+          )
+        );
+        setEditModalOpen(false);
+        setEventToEdit(null);
+        router.refresh();
+      }
+    } catch {
+      setEditError("Failed to update event. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -391,13 +482,29 @@ export default function DashboardClient({
                   {events.map((ev) => (
                     <tr key={ev.id} className="hover:bg-[#FAF9F6] transition-colors">
                       <td className="py-4 pr-4 font-semibold text-[#171923]">
-                        <Link
-                          href={`/events/${ev.slug}`}
-                          className="hover:text-[#5146E5] transition-colors inline-flex items-center gap-1.5"
-                        >
-                          <span>{ev.title}</span>
-                          <ExternalLink className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-12 h-9 rounded-lg overflow-hidden border border-[#E8E5DF] shrink-0 bg-[#FAF9F6]">
+                            <Image
+                              src={ev.imageUrl || getEventCover(ev.title, undefined, ev.id).url}
+                              alt={ev.title}
+                              fill
+                              sizes="48px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/events/${ev.slug}`}
+                              className="hover:text-[#5146E5] transition-colors inline-flex items-center gap-1.5"
+                            >
+                              <span className="truncate">{ev.title}</span>
+                              <ExternalLink className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                            </Link>
+                            <div className="text-[11px] text-[#686D78] font-normal truncate max-w-xs">
+                              {ev.location}
+                            </div>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-4 px-4 text-[#686D78] text-xs">
                         <div className="font-medium text-[#171923]">
@@ -427,6 +534,15 @@ export default function DashboardClient({
                         )}
                       </td>
                       <td className="py-4 pl-4 text-right space-x-2">
+                        <button
+                          onClick={() => handleOpenEditModal(ev)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] hover:border-[#D5D1C8] text-xs font-semibold rounded-lg text-[#171923] transition-all shadow-2xs cursor-pointer"
+                          title="Edit Event & Poster"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-[#5146E5]" />
+                          <span>Edit</span>
+                        </button>
+
                         <a
                           href={`/api/events/${ev.id}/export`}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] hover:border-[#D5D1C8] text-xs font-semibold rounded-lg text-[#171923] transition-all shadow-2xs"
@@ -618,6 +734,211 @@ export default function DashboardClient({
           )}
         </section>
       </main>
+
+      {/* Edit Event Modal */}
+      {editModalOpen && eventToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171923]/50 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl max-w-xl w-full p-6 shadow-[0_20px_50px_rgba(23,25,35,0.15)] relative space-y-5 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E5DF]">
+              <div>
+                <h3 className="text-base font-bold text-[#171923]">
+                  Edit Event & Poster
+                </h3>
+                <p className="text-xs text-[#686D78]">
+                  Update event details and manage Cloudinary cover poster
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(false)}
+                disabled={isProcessing || isUploadingEditPoster}
+                className="p-1 text-[#686D78] hover:text-[#171923] rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditEvent} className="space-y-4">
+              {/* Image Upload Component */}
+              <ImageUpload
+                value={editForm.imageUrl}
+                publicId={editForm.imagePublicId}
+                onChange={(url, publicId) => {
+                  setEditForm((prev) => ({
+                    ...prev,
+                    imageUrl: url,
+                    imagePublicId: publicId,
+                  }));
+                }}
+                onRemove={() => {
+                  setEditForm((prev) => ({
+                    ...prev,
+                    imageUrl: "",
+                    imagePublicId: "",
+                  }));
+                }}
+                onUploadStateChange={setIsUploadingEditPoster}
+                disabled={isProcessing}
+                eventId={eventToEdit.id}
+              />
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                  Event Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.title}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                  Description
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5] resize-y"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.date}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, date: e.target.value }))
+                    }
+                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                    Time
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 10:00 AM - 4:00 PM"
+                    value={editForm.time}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, time: e.target.value }))
+                    }
+                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                  Location / Venue
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.location}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, location: e.target.value }))
+                  }
+                  className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                    Capacity
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editForm.capacity}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        capacity: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+                    RSVP Deadline
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.registrationDeadline}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        registrationDeadline: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                  />
+                </div>
+              </div>
+
+              {editError && (
+                <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-[#DC2626] text-xs font-medium">
+                  {editError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#E8E5DF]">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  disabled={isProcessing || isUploadingEditPoster}
+                  className="px-4 py-2 border border-[#E8E5DF] hover:border-[#D5D1C8] bg-white text-[#171923] text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessing || isUploadingEditPoster}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-[#5146E5] hover:bg-[#4338CA] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : isUploadingEditPoster ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Uploading Poster...</span>
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Close Event Modal */}
       {closeConfirmOpen && selectedEvent && (

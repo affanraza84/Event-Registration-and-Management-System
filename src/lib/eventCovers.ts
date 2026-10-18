@@ -1,3 +1,5 @@
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryUrl";
+
 // Curated high-resolution editorial photography for tech gatherings, hackathons, and conferences
 export interface EventCoverInfo {
   url: string;
@@ -101,7 +103,20 @@ const DEFAULT_COVERS: EventCoverInfo[] = [
   },
 ];
 
-export function getEventCover(title: string, category?: string, id?: string): EventCoverInfo {
+export function getEventCover(
+  title: string,
+  category?: string,
+  id?: string,
+  customImageUrl?: string
+): EventCoverInfo {
+  if (customImageUrl && customImageUrl.trim().length > 0) {
+    return {
+      url: getOptimizedCloudinaryUrl(customImageUrl.trim(), { width: 1200 }),
+      alt: title || "Event cover poster",
+      accent: "#5146E5",
+    };
+  }
+
   const text = `${title} ${category || ""}`.toLowerCase();
   let pool = DEFAULT_COVERS;
 

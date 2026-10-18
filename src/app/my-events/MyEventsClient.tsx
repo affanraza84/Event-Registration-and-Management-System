@@ -31,6 +31,7 @@ interface RegistrationItem {
     date: string;
     time: string;
     location: string;
+    imageUrl?: string;
   };
 }
 
@@ -162,7 +163,7 @@ export default function MyEventsClient({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {registrations.map((reg) => {
-              const cover = getEventCover(reg.event.title, undefined, reg.event.id);
+              const cover = getEventCover(reg.event.title, undefined, reg.event.id, reg.event.imageUrl);
               return (
                 <div
                   key={reg.id}

@@ -22,6 +22,7 @@ import {
 import { eventCreationSchema, EventCreationInput } from "@/validations/event";
 import { createEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
+import ImageUpload from "@/components/ImageUpload";
 
 interface CreateEventFormProps {
   initialDraft?: {
@@ -38,6 +39,9 @@ interface CreateEventFormProps {
 export default function CreateEventForm({ initialDraft }: CreateEventFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [posterUrl, setPosterUrl] = useState("");
+  const [posterPublicId, setPosterPublicId] = useState("");
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const isImportedDraft = initialDraft?.importSource === "discovery";
@@ -46,6 +50,7 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(eventCreationSchema),
@@ -58,6 +63,8 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
       capacity: 50,
       registrationDeadline: "",
       sourceUrl: initialDraft?.sourceUrl || "",
+      imageUrl: "",
+      imagePublicId: "",
     },
   });
 
@@ -179,6 +186,26 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
                 <span>{globalError}</span>
               </div>
             )}
+
+            {/* Event Cover Poster Upload */}
+            <ImageUpload
+              value={posterUrl}
+              publicId={posterPublicId}
+              onChange={(url, publicId) => {
+                setPosterUrl(url);
+                setPosterPublicId(publicId);
+                setValue("imageUrl", url, { shouldValidate: true });
+                setValue("imagePublicId", publicId, { shouldValidate: true });
+              }}
+              onRemove={() => {
+                setPosterUrl("");
+                setPosterPublicId("");
+                setValue("imageUrl", "", { shouldValidate: true });
+                setValue("imagePublicId", "", { shouldValidate: true });
+              }}
+              onUploadStateChange={setIsUploadingImage}
+              disabled={isLoading}
+            />
 
             {/* Event Title */}
             <div className="space-y-1.5">
@@ -397,13 +424,18 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
               </Link>
               <button
                 type="submit"
-                disabled={isLoading || (isImportedDraft && !confirmedByHost)}
+                disabled={isLoading || isUploadingImage || (isImportedDraft && !confirmedByHost)}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] text-white text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>{isImportedDraft ? "Publishing Event..." : "Creating Event..."}</span>
+                  </>
+                ) : isUploadingImage ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Uploading Poster...</span>
                   </>
                 ) : isImportedDraft ? (
                   <>

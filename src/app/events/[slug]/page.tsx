@@ -89,6 +89,8 @@ export default async function EventPage({
     registrationDeadline: event.registrationDeadline.toISOString().split("T")[0],
     isClosed: event.isClosed,
     sourceUrl: event.sourceUrl || undefined,
+    imageUrl: event.imageUrl || undefined,
+    imagePublicId: event.imagePublicId || undefined,
   };
 
   return (

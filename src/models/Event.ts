@@ -65,6 +65,16 @@ const EventSchema = new Schema<IEventDocument>(
       trim: true,
       default: undefined,
     },
+    imageUrl: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    imagePublicId: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
   },
   {
     timestamps: true,

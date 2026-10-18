@@ -36,6 +36,7 @@ export default async function Home() {
     location: string;
     capacity: number;
     attendeeCount: number;
+    imageUrl?: string;
   }> = [];
 
   try {
@@ -57,6 +58,7 @@ export default async function Home() {
       location: ev.location,
       capacity: ev.capacity,
       attendeeCount: ev.attendeeCount,
+      imageUrl: ev.imageUrl || undefined,
     }));
   } catch (error) {
     console.error("Failed to load upcoming events:", error);
@@ -248,7 +250,7 @@ export default async function Home() {
             {serializedEvents.map((ev) => {
               const spotsLeft = ev.capacity - ev.attendeeCount;
               const isFull = spotsLeft <= 0;
-              const cover = getEventCover(ev.title, undefined, ev.id);
+              const cover = getEventCover(ev.title, undefined, ev.id, ev.imageUrl);
 
               return (
                 <article

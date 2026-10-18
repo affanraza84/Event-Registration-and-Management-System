@@ -6,6 +6,8 @@ export interface IHost {
   name: string;
   email: string;
   passwordHash: string;
+  imageUrl?: string;
+  imagePublicId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,6 +18,8 @@ export interface IAttendee {
   name: string;
   email: string;
   passwordHash: string;
+  imageUrl?: string;
+  imagePublicId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +39,8 @@ export interface IEvent {
   isClosed: boolean;
   hostId: Types.ObjectId;
   sourceUrl?: string;
+  imageUrl?: string;
+  imagePublicId?: string;
   createdAt: Date;
   updatedAt: Date;
 }

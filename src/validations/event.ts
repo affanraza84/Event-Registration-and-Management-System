@@ -25,6 +25,17 @@ export const eventCreationSchema = z
       )
       .optional()
       .or(z.literal("")),
+    imageUrl: z
+      .string()
+      .trim()
+      .url("Poster image must be a valid URL")
+      .refine(
+        (url) => !url || /^https?:\/\//i.test(url),
+        "Poster image must use http or https protocol"
+      )
+      .optional()
+      .or(z.literal("")),
+    imagePublicId: z.string().trim().optional().or(z.literal("")),
   })
   .refine(
     (data) => {

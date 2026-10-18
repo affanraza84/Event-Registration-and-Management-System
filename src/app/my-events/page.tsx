@@ -64,6 +64,7 @@ export default async function MyEventsPage() {
             date: event.date.toISOString(),
             time: event.time,
             location: event.location,
+            imageUrl: event.imageUrl || undefined,
           },
         };
       })

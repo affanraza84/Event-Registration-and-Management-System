@@ -41,6 +41,8 @@ interface EventDetailsClientProps {
     registrationDeadline: string;
     isClosed: boolean;
     sourceUrl?: string;
+    imageUrl?: string;
+    imagePublicId?: string;
   };
   initialIsRegistered: boolean;
   initialAttendeeCount: number;
@@ -101,7 +103,7 @@ export default function EventDetailsClient({
     Math.round((attendeeCount / event.capacity) * 100)
   );
 
-  const cover = getEventCover(event.title, undefined, event.id);
+  const cover = getEventCover(event.title, undefined, event.id, event.imageUrl);
 
   // Form setup
   const { register, handleSubmit } = useForm({

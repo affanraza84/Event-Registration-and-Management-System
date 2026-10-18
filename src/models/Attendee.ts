@@ -24,6 +24,16 @@ const AttendeeSchema = new Schema<IAttendeeDocument>(
       type: String,
       required: [true, "Password is required"],
     },
+    imageUrl: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    imagePublicId: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
   },
   {
     timestamps: true,
