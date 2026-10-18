@@ -6,7 +6,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Shield, User, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Shield,
+  User,
+  Loader2,
+  ArrowLeft,
+  Compass,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from "lucide-react";
 import { loginSchema, LoginInput } from "@/validations/auth";
 
 function LoginForm() {
@@ -16,6 +27,7 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<"host" | "attendee">("host");
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -50,12 +62,12 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        setGlobalError(result.error || "Invalid credentials. Please try again.");
+        setGlobalError(result.error || "Invalid credentials. Please verify your email and password.");
       } else {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          router.push(data.role === "host" ? "/events/new" : "/my-events");
+          router.push(data.role === "host" ? "/dashboard" : "/my-events");
         }
         router.refresh();
       }
@@ -67,91 +79,105 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-neutral-900/40 backdrop-blur-xl border border-neutral-800/80 rounded-2xl p-8 shadow-2xl">
-      {/* Role Tabs */}
-      <div className="grid grid-cols-2 p-1 bg-neutral-950/80 rounded-lg mb-6 border border-neutral-800/50">
+    <div className="bg-white border border-[#E8E5DF] rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(23,25,35,0.06)]">
+      {/* Role Switcher Pill */}
+      <div className="grid grid-cols-2 p-1 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl mb-6">
         <button
           type="button"
           onClick={() => handleRoleChange("host")}
-          className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+          className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
             role === "host"
-              ? "bg-purple-600 text-white shadow"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "bg-[#5146E5] text-white shadow-xs"
+              : "text-[#686D78] hover:text-[#171923]"
           }`}
         >
-          <Shield className="w-4 h-4" />
-          Host Account
+          <Shield className="w-3.5 h-3.5" />
+          <span>Host Account</span>
         </button>
         <button
           type="button"
           onClick={() => handleRoleChange("attendee")}
-          className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+          className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
             role === "attendee"
-              ? "bg-purple-600 text-white shadow"
-              : "text-neutral-400 hover:text-neutral-200"
+              ? "bg-[#5146E5] text-white shadow-xs"
+              : "text-[#686D78] hover:text-[#171923]"
           }`}
         >
-          <User className="w-4 h-4" />
-          Attendee Account
+          <User className="w-3.5 h-3.5" />
+          <span>Attendee Account</span>
         </button>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {globalError && (
-          <div className="p-3.5 bg-red-950/40 border border-red-900/50 rounded-lg text-red-400 text-sm font-medium">
-            {globalError}
+          <div
+            role="alert"
+            className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-[#DC2626] text-xs flex items-center gap-2 font-medium"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{globalError}</span>
           </div>
         )}
 
-        {/* Email Field */}
+        {/* Email Address */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+          <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
             Email Address
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-              <Mail className="w-4 h-4" />
-            </div>
+            <Mail className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="email"
               placeholder="name@example.com"
               disabled={isLoading}
               {...register("email")}
-              className={`w-full pl-10 pr-4 py-3 bg-neutral-950/50 border rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all ${
+              className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
                 errors.email
-                  ? "border-red-900/50 focus:border-red-500"
-                  : "border-neutral-800/80 focus:border-purple-500/80"
+                  ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                  : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
               }`}
             />
           </div>
           {errors.email && (
-            <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+            <p className="text-[#DC2626] text-xs mt-1">{errors.email.message}</p>
           )}
         </div>
 
-        {/* Password Field */}
+        {/* Password */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
+              Password
+            </label>
+          </div>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-              <Lock className="w-4 h-4" />
-            </div>
+            <Lock className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               disabled={isLoading}
               {...register("password")}
-              className={`w-full pl-10 pr-4 py-3 bg-neutral-950/50 border rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all ${
+              className={`w-full pl-10 pr-10 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
                 errors.password
-                  ? "border-red-900/50 focus:border-red-500"
-                  : "border-neutral-800/80 focus:border-purple-500/80"
+                  ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                  : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
               }`}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#686D78] hover:text-[#171923] p-1 cursor-pointer"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
           </div>
           {errors.password && (
-            <p className="text-red-400 text-xs mt-1">
+            <p className="text-[#DC2626] text-xs mt-1">
               {errors.password.message}
             </p>
           )}
@@ -160,26 +186,26 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-lg shadow-purple-950/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mt-2"
+          className="w-full flex items-center justify-center gap-2 py-3 bg-[#5146E5] hover:bg-[#4338CA] text-white font-medium rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2 active:scale-[0.99]"
         >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Signing In...
+              <span>Signing in...</span>
             </>
           ) : (
-            "Sign In"
+            <span>Sign In to EventScout</span>
           )}
         </button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-neutral-400 border-t border-neutral-800/50 pt-4">
-        Don&apos;t have an account?{" "}
+      <div className="mt-6 text-center text-xs text-[#686D78] border-t border-[#E8E5DF] pt-4">
+        Don&apos;t have an account yet?{" "}
         <Link
           href="/signup"
-          className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
+          className="text-[#5146E5] hover:text-[#4338CA] font-semibold transition-colors"
         >
-          Sign up
+          Create account
         </Link>
       </div>
     </div>
@@ -188,40 +214,41 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-neutral-950 px-4">
-      {/* Background blobs for premium glow effect */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-md z-10">
-        {/* Home Button */}
+    <div className="min-h-screen bg-[#FAF9F6] text-[#171923] flex flex-col justify-center items-center px-4 py-12">
+      <div className="w-full max-w-md space-y-6">
+        {/* Back Link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-neutral-400 hover:text-neutral-200 text-sm font-medium mb-6 transition-all"
+          className="inline-flex items-center gap-1.5 text-[#686D78] hover:text-[#171923] text-xs font-medium transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Home</span>
         </Link>
 
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <Link
-            href="/"
-            className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
-          >
-            Luma
+        {/* Brand Header */}
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#5146E5] flex items-center justify-center text-white shadow-xs">
+              <Compass className="w-5 h-5" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-[#171923]">
+              Event<span className="text-[#5146E5]">Scout</span>
+            </span>
           </Link>
-          <p className="text-neutral-400 mt-2 text-sm">
-            Sign in to manage and register for events
+          <h1 className="text-xl font-bold text-[#171923]">
+            Welcome Back
+          </h1>
+          <p className="text-xs text-[#686D78]">
+            Sign in to access your events, registrations, and host settings
           </p>
         </div>
 
-        {/* Glassmorphic Form Card wrapped in Suspense */}
+        {/* Login Form Container */}
         <Suspense
           fallback={
-            <div className="bg-neutral-900/40 backdrop-blur-xl border border-neutral-800/80 rounded-2xl p-8 shadow-2xl flex flex-col items-center justify-center min-h-[400px]">
-              <Loader2 className="w-8 h-8 animate-spin text-purple-500 mb-2" />
-              <p className="text-neutral-400 text-sm">Loading login form...</p>
+            <div className="bg-white border border-[#E8E5DF] rounded-2xl p-8 shadow-xs flex flex-col items-center justify-center min-h-[360px]">
+              <Loader2 className="w-6 h-6 animate-spin text-[#5146E5] mb-2" />
+              <p className="text-[#686D78] text-xs">Loading login form...</p>
             </div>
           }
         >

@@ -6,7 +6,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, Lock, Shield, Loader2, UserPlus, ArrowLeft } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Shield,
+  Loader2,
+  ArrowLeft,
+  Compass,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { signupSchema, SignupInput } from "@/validations/auth";
 import { signUpAction } from "@/actions/auth";
 
@@ -16,6 +28,7 @@ export default function SignupPage() {
   const [role, setRole] = useState<"host" | "attendee">("host");
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -52,9 +65,8 @@ export default function SignupPage() {
         return;
       }
 
-      setStatusMsg("Account created successfully! Logging you in...");
+      setStatusMsg("Account created! Signing you in...");
 
-      // Automatically sign the user in after successful signup
       const loginResult = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -63,13 +75,12 @@ export default function SignupPage() {
       });
 
       if (loginResult?.error) {
-        // Fallback: send them to login page if auto-login failed
         setStatusMsg("Redirecting to login...");
         router.push(`/login?registered=true&email=${encodeURIComponent(data.email)}`);
       } else {
-        setStatusMsg("Login successful! Redirecting...");
+        setStatusMsg("Success! Directing to your workspace...");
         router.refresh();
-        router.push(data.role === "host" ? "/events/new" : "/my-events");
+        router.push(data.role === "host" ? "/dashboard" : "/my-events");
       }
     } catch {
       setGlobalError("An unexpected error occurred. Please try again.");
@@ -78,100 +89,107 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-neutral-950 px-4">
-      {/* Background blobs for premium glow effect */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-md z-10">
-        {/* Home Button */}
+    <div className="min-h-screen bg-[#FAF9F6] text-[#171923] flex flex-col justify-center items-center px-4 py-12">
+      <div className="w-full max-w-md space-y-6">
+        {/* Back Navigation */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-neutral-400 hover:text-neutral-200 text-sm font-medium mb-6 transition-all"
+          className="inline-flex items-center gap-1.5 text-[#686D78] hover:text-[#171923] text-xs font-medium transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Home</span>
         </Link>
 
-        {/* Logo/Header */}
-        <div className="text-center mb-8 font-semibold">
-          <Link
-            href="/"
-            className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
-          >
-            Luma
+        {/* Brand Header */}
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#5146E5] flex items-center justify-center text-white shadow-xs">
+              <Compass className="w-5 h-5" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-[#171923]">
+              Event<span className="text-[#5146E5]">Scout</span>
+            </span>
           </Link>
-          <p className="text-neutral-400 mt-2 text-sm">
-            Create an account to start hosting or attending events
+          <h1 className="text-xl font-bold text-[#171923]">
+            Create Your Account
+          </h1>
+          <p className="text-xs text-[#686D78]">
+            Discover gatherings or publish and organize your own community events
           </p>
         </div>
 
-        {/* Glassmorphic Form Card */}
-        <div className="bg-neutral-900/40 backdrop-blur-xl border border-neutral-800/80 rounded-2xl p-8 shadow-2xl">
-          {/* Role Tabs */}
-          <div className="grid grid-cols-2 p-1 bg-neutral-950/80 rounded-lg mb-6 border border-neutral-800/50">
+        {/* Signup Card */}
+        <div className="bg-white border border-[#E8E5DF] rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(23,25,35,0.06)]">
+          {/* Role Toggle */}
+          <div className="grid grid-cols-2 p-1 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl mb-6">
             <button
               type="button"
               onClick={() => handleRoleChange("host")}
-              className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 role === "host"
-                  ? "bg-purple-600 text-white shadow"
-                  : "text-neutral-400 hover:text-neutral-200"
+                  ? "bg-[#5146E5] text-white shadow-xs"
+                  : "text-[#686D78] hover:text-[#171923]"
               }`}
             >
-              <Shield className="w-4 h-4" />
-              Host Account
+              <Shield className="w-3.5 h-3.5" />
+              <span>Host Account</span>
             </button>
             <button
               type="button"
               onClick={() => handleRoleChange("attendee")}
-              className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 role === "attendee"
-                  ? "bg-purple-600 text-white shadow"
-                  : "text-neutral-400 hover:text-neutral-200"
+                  ? "bg-[#5146E5] text-white shadow-xs"
+                  : "text-[#686D78] hover:text-[#171923]"
               }`}
             >
-              <User className="w-4 h-4" />
-              Attendee Account
+              <User className="w-3.5 h-3.5" />
+              <span>Attendee Account</span>
             </button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {globalError && (
-              <div className="p-3.5 bg-red-950/40 border border-red-900/50 rounded-lg text-red-400 text-sm font-medium">
-                {globalError}
+              <div
+                role="alert"
+                className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-[#DC2626] text-xs flex items-center gap-2 font-medium"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{globalError}</span>
               </div>
             )}
 
             {statusMsg && (
-              <div className="p-3.5 bg-emerald-950/40 border border-emerald-900/50 rounded-lg text-emerald-400 text-sm font-medium">
-                {statusMsg}
+              <div
+                role="status"
+                className="p-3 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl text-[#059669] text-xs flex items-center gap-2 font-medium"
+              >
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{statusMsg}</span>
               </div>
             )}
 
             {/* Name Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
                 Full Name
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-                  <UserPlus className="w-4 h-4" />
-                </div>
+                <User className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Your full name"
                   disabled={isLoading}
                   {...register("name")}
-                  className={`w-full pl-10 pr-4 py-3 bg-neutral-950/50 border rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all ${
+                  className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
                     errors.name
-                      ? "border-red-900/50 focus:border-red-500"
-                      : "border-neutral-800/80 focus:border-purple-500/80"
+                      ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                      : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
                   }`}
                 />
               </div>
               {errors.name && (
-                <p className="text-red-400 text-xs mt-1">
+                <p className="text-[#DC2626] text-xs mt-1">
                   {errors.name.message}
                 </p>
               )}
@@ -179,27 +197,25 @@ export default function SignupPage() {
 
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-                  <Mail className="w-4 h-4" />
-                </div>
+                <Mail className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="email"
                   placeholder="name@example.com"
                   disabled={isLoading}
                   {...register("email")}
-                  className={`w-full pl-10 pr-4 py-3 bg-neutral-950/50 border rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all ${
+                  className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
                     errors.email
-                      ? "border-red-900/50 focus:border-red-500"
-                      : "border-neutral-800/80 focus:border-purple-500/80"
+                      ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                      : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
                   }`}
                 />
               </div>
               {errors.email && (
-                <p className="text-red-400 text-xs mt-1">
+                <p className="text-[#DC2626] text-xs mt-1">
                   {errors.email.message}
                 </p>
               )}
@@ -207,27 +223,37 @@ export default function SignupPage() {
 
             {/* Password Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-                  <Lock className="w-4 h-4" />
-                </div>
+                <Lock className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  type="password"
-                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 6 characters"
                   disabled={isLoading}
                   {...register("password")}
-                  className={`w-full pl-10 pr-4 py-3 bg-neutral-950/50 border rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all ${
+                  className={`w-full pl-10 pr-10 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
                     errors.password
-                      ? "border-red-900/50 focus:border-red-500"
-                      : "border-neutral-800/80 focus:border-purple-500/80"
+                      ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                      : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
                   }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#686D78] hover:text-[#171923] p-1 cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
               {errors.password && (
-                <p className="text-red-400 text-xs mt-1">
+                <p className="text-[#DC2626] text-xs mt-1">
                   {errors.password.message}
                 </p>
               )}
@@ -236,24 +262,24 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-lg shadow-purple-950/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#5146E5] hover:bg-[#4338CA] text-white font-medium rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2 active:scale-[0.99]"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Creating Account...
+                  <span>Creating Account...</span>
                 </>
               ) : (
-                "Sign Up"
+                <span>Create {role === "host" ? "Host" : "Attendee"} Account</span>
               )}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-neutral-400 border-t border-neutral-800/50 pt-4">
+          <div className="mt-6 text-center text-xs text-[#686D78] border-t border-[#E8E5DF] pt-4">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
+              className="text-[#5146E5] hover:text-[#4338CA] font-semibold transition-colors"
             >
               Sign in
             </Link>

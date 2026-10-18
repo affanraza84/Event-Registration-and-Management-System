@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import {
-  Sparkles,
   Calendar,
   ArrowRight,
   ShieldCheck,
@@ -10,16 +9,21 @@ import {
   Compass,
   Zap,
   BarChart3,
+  Search,
+  Sparkles,
+  Users,
+  CheckCircle2,
 } from "lucide-react";
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";
+import { getEventCover } from "@/lib/eventCovers";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "EventScout | Live Event Discovery & Registration",
+  title: "EventScout — Live Event Discovery & Registration",
   description:
-    "Discover live hackathons, tech meetups, and conferences across India powered by SerpApi, plus create and host your own community gatherings.",
+    "Explore inspiring tech meetups, hackathons, conferences, and community gatherings across India. Curated discovery and seamless RSVP management.",
 };
 
 export default async function Home() {
@@ -37,13 +41,12 @@ export default async function Home() {
   try {
     await connectToDatabase();
 
-    // Fetch upcoming, active events to showcase on landing page
     const upcomingEvents = await Event.find({
       isClosed: false,
       date: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
     })
       .sort({ date: 1 })
-      .limit(4);
+      .limit(6);
 
     serializedEvents = upcomingEvents.map((ev) => ({
       id: ev._id.toString(),
@@ -57,241 +60,377 @@ export default async function Home() {
     }));
   } catch (error) {
     console.error("Failed to load upcoming events:", error);
-    // Graceful fallback to empty list so landing page still renders flawlessly
     serializedEvents = [];
   }
 
   return (
-    <div className="min-h-screen bg-neutral-955 text-neutral-100 flex flex-col relative overflow-hidden">
-      {/* Background blurs */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-purple-600/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 right-10 w-96 h-96 bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-1/4 left-10 w-96 h-96 bg-indigo-600/5 rounded-full blur-[140px] pointer-events-none" />
-
+    <div className="min-h-screen bg-[#FAF9F6] text-[#171923] flex flex-col">
       <Navbar />
 
       {/* Hero Section */}
-      <header className="z-10 text-center max-w-4xl mx-auto px-6 pt-20 pb-16 flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-950/40 border border-purple-900/40 rounded-full text-purple-300 text-xs font-semibold mb-6 animate-fade-in">
-          <Sparkles className="w-3.5 h-3.5" />
-          Live Event Discovery & Management
+      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden border-b border-[#E8E5DF]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* Left Column: Editorial Headline & Actions */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EEEAFE] border border-[#DDD6FE] text-[#5146E5] text-xs font-semibold tracking-wide uppercase">
+                <Sparkles className="w-3.5 h-3.5" />
+                Live Event Discovery & Management
+              </div>
+
+              <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-[#171923] leading-[1.12]">
+                Find Your People. <br />
+                <span className="text-[#5146E5]">Discover Your Next Experience.</span>
+              </h1>
+
+              <p className="text-lg sm:text-xl text-[#686D78] leading-relaxed max-w-xl font-normal">
+                Explore inspiring tech meetups, hackathons, conferences, and community gatherings across India.
+              </p>
+
+              {/* Primary Call to Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Link
+                  href="/discover"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#5146E5] hover:bg-[#4338CA] text-white text-base font-medium rounded-xl shadow-xs transition-all duration-150 active:scale-[0.99]"
+                >
+                  <Compass className="w-4.5 h-4.5" />
+                  Explore Events
+                  <ArrowRight className="w-4 h-4 ml-0.5" />
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF9F6] text-[#171923] border border-[#E8E5DF] hover:border-[#D5D1C8] text-base font-medium rounded-xl shadow-xs transition-all duration-150"
+                >
+                  Host an Event
+                </Link>
+              </div>
+
+              {/* Live quick search bar */}
+              <div className="pt-4">
+                <form
+                  action="/discover"
+                  method="GET"
+                  className="bg-white border border-[#E8E5DF] p-2 rounded-2xl shadow-[0_2px_12px_rgba(23,25,35,0.04)] flex flex-col sm:flex-row items-stretch gap-2"
+                >
+                  <div className="flex items-center gap-2.5 px-3 py-2 flex-1 min-w-0">
+                    <Search className="w-4.5 h-4.5 text-[#686D78] shrink-0" />
+                    <input
+                      type="text"
+                      name="q"
+                      placeholder="e.g. AI Hackathon, Web3, Python meetup"
+                      className="w-full text-sm text-[#171923] placeholder-[#9CA3AF] bg-transparent focus:outline-none"
+                    />
+                  </div>
+                  <div className="h-px sm:h-auto sm:w-px bg-[#E8E5DF]" />
+                  <div className="flex items-center gap-2.5 px-3 py-2 sm:w-48 shrink-0">
+                    <MapPin className="w-4.5 h-4.5 text-[#686D78] shrink-0" />
+                    <input
+                      type="text"
+                      name="location"
+                      placeholder="City (e.g. Bengaluru)"
+                      className="w-full text-sm text-[#171923] placeholder-[#9CA3AF] bg-transparent focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center px-5 py-2.5 bg-[#171923] hover:bg-[#2D313E] text-white text-sm font-medium rounded-xl transition-colors cursor-pointer"
+                  >
+                    Find
+                  </button>
+                </form>
+              </div>
+
+              {/* Trust signals */}
+              <div className="pt-2 flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-[#686D78]">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+                  <span>Real-time SerpApi event intelligence</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+                  <span>Automated attendee capacity limits</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+                  <span>Secure host CSV exports</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Editorial Visual Composition */}
+            <div className="lg:col-span-5 relative">
+              <div className="relative mx-auto max-w-md lg:max-w-none">
+                {/* Main featured editorial image */}
+                <div className="rounded-2xl overflow-hidden border border-[#E8E5DF] shadow-[0_12px_40px_rgba(23,25,35,0.08)] bg-white aspect-[4/3] relative">
+                  <img
+                    src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80"
+                    alt="Audience and founders collaborating at a tech gathering"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#171923]/70 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider bg-white/20 backdrop-blur-md px-2 py-0.5 rounded text-white inline-block mb-1">
+                      Curated Experience
+                    </span>
+                    <h3 className="text-base font-semibold text-white drop-shadow-xs">
+                      Community Gatherings That Spark Breakthroughs
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Overlaid floating mini stat card */}
+                <div className="hidden sm:flex absolute -bottom-6 -left-6 bg-white border border-[#E8E5DF] rounded-2xl p-4 shadow-[0_8px_30px_rgba(23,25,35,0.08)] items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#EEEAFE] flex items-center justify-center text-[#5146E5]">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-[#686D78]">
+                      Active Ecosystem
+                    </div>
+                    <div className="text-sm font-bold text-[#171923]">
+                      Hackathons & Conferences
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
-          Discover live events,{" "}
-          <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-amber-400 bg-clip-text text-transparent">
-            host gatherings.
-          </span>
-        </h1>
-
-        <p className="text-lg sm:text-xl text-neutral-400 font-light max-w-2xl leading-relaxed mb-8">
-          EventScout helps you scout upcoming tech meetups, hackathons, and conferences across India in real-time, plus create and host your own community events.
-        </p>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-          <Link
-            href="/discover"
-            className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all shadow-xl shadow-purple-950/30 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Compass className="w-5 h-5" />
-            Discover Live Events
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/signup"
-            className="flex items-center justify-center gap-2 px-8 py-4 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Host an Event
-          </Link>
-        </div>
-      </header>
-
-      {/* Featured Events Section */}
-      <section className="z-10 max-w-6xl mx-auto px-6 py-12 w-full space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      {/* Featured & Upcoming Events Section */}
+      <section className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 pb-4 border-b border-[#E8E5DF]">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-100 flex items-center gap-2">
-              <Compass className="w-6 h-6 text-purple-400" />
-              Discover Gatherings
+            <span className="text-xs font-semibold text-[#5146E5] uppercase tracking-wider">
+              Upcoming Gatherings
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#171923] mt-1">
+              Discover What&apos;s Happening
             </h2>
-            <p className="text-neutral-400 text-sm mt-1">
-              Explore upcoming public meetups and reserve your ticket.
+            <p className="text-[#686D78] text-sm mt-1">
+              Handcrafted meetups, workshops, and symposiums open for registration.
             </p>
           </div>
-          {serializedEvents.length > 0 && (
-            <span className="text-xs text-neutral-500">
-              Showing {serializedEvents.length} active events
-            </span>
-          )}
+          <Link
+            href="/discover"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#5146E5] hover:text-[#4338CA] transition-colors"
+          >
+            <span>Explore all live events</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {serializedEvents.length === 0 ? (
-          <div className="bg-neutral-900/30 border border-neutral-800/80 rounded-2xl p-12 text-center max-w-lg mx-auto space-y-4">
-            <div className="inline-flex p-3 bg-neutral-900 border border-neutral-850 rounded-full text-neutral-500">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-[#EEEAFE] text-[#5146E5] flex items-center justify-center mx-auto">
               <Calendar className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-neutral-350">
-              No public events active right now
-            </h3>
-            <p className="text-neutral-500 text-sm">
-              Be the pioneer! Create a host account and design the first gathering in your community.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold rounded-xl transition-all"
-            >
-              Sign Up as Host
-            </Link>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-[#171923]">
+                No public events active right now
+              </h3>
+              <p className="text-[#686D78] text-sm max-w-md mx-auto">
+                Be the first to bring your community together. Create a host account and organize an inspiring gathering today.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] text-white text-sm font-medium rounded-xl transition-all shadow-xs"
+              >
+                Host the First Event
+              </Link>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {serializedEvents.map((ev) => {
               const spotsLeft = ev.capacity - ev.attendeeCount;
               const isFull = spotsLeft <= 0;
+              const cover = getEventCover(ev.title, undefined, ev.id);
 
               return (
-                <div
+                <article
                   key={ev.id}
-                  className="bg-neutral-900/40 border border-neutral-800/80 rounded-2xl p-5 shadow-xl flex flex-col justify-between hover:border-neutral-700/80 transition-all duration-200"
+                  className="group bg-white border border-[#E8E5DF] hover:border-[#D5D1C8] rounded-2xl overflow-hidden shadow-xs hover:shadow-[0_8px_30px_rgba(23,25,35,0.06)] transition-all duration-200 flex flex-col justify-between"
                 >
-                  <div className="space-y-4">
-                    {/* Date Badge */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold tracking-wider uppercase bg-purple-950/60 text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded-md">
-                        RSVP Open
-                      </span>
-                      <span className="text-xs text-neutral-550">
-                        {new Date(ev.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
+                  <div>
+                    {/* Event Cover Image */}
+                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#FAF9F6]">
+                      <img
+                        src={cover.url}
+                        alt={cover.alt}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-103"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-md bg-white/95 text-[#171923] border border-[#E8E5DF] shadow-xs backdrop-blur-sm">
+                          {new Date(ev.date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <div className="absolute top-3 right-3">
+                        <span
+                          className={`text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-xs backdrop-blur-sm border ${
+                            isFull
+                              ? "bg-[#FEF2F2]/95 text-[#DC2626] border-[#FECACA]"
+                              : "bg-[#ECFDF5]/95 text-[#059669] border-[#A7F3D0]"
+                          }`}
+                        >
+                          {isFull ? "Event Full" : "RSVP Open"}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <h3 className="font-extrabold text-neutral-100 line-clamp-1">
-                        {ev.title}
+                    {/* Content */}
+                    <div className="p-5 space-y-3">
+                      <h3 className="font-bold text-lg text-[#171923] group-hover:text-[#5146E5] transition-colors line-clamp-2">
+                        <Link href={`/events/${ev.slug}`}>
+                          {ev.title}
+                        </Link>
                       </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-                        <Clock className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span>{ev.time}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-                        <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span className="line-clamp-1">{ev.location}</span>
+
+                      <div className="space-y-1.5 text-xs text-[#686D78]">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-[#5146E5] shrink-0" />
+                          <span>{ev.time}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-[#5146E5] shrink-0" />
+                          <span className="line-clamp-1">{ev.location}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-900 mt-6 pt-4 flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-neutral-450">
+                  {/* Card Footer */}
+                  <div className="px-5 py-3.5 bg-[#FAF9F6] border-t border-[#E8E5DF] flex items-center justify-between">
+                    <div className="text-xs text-[#686D78]">
                       {isFull ? (
-                        <span className="text-red-400 font-semibold">Sold Out</span>
+                        <span className="text-[#DC2626] font-semibold">Capacity reached</span>
                       ) : (
                         <span>
-                          <strong className="text-neutral-250 font-bold">
+                          <strong className="text-[#171923] font-semibold">
                             {spotsLeft}
                           </strong>{" "}
-                          spots left
+                          spots remaining
                         </span>
                       )}
                     </div>
                     <Link
                       href={`/events/${ev.slug}`}
-                      className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold rounded-lg text-neutral-300 transition-all shrink-0"
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-[#FAF9F6] text-[#5146E5] border border-[#DDD6FE] hover:border-[#5146E5] rounded-lg transition-colors shadow-2xs"
                     >
-                      RSVP
+                      <span>RSVP</span>
+                      <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
         )}
       </section>
 
-      {/* Features Grid Section */}
-      <section className="z-10 max-w-6xl mx-auto px-6 py-20 w-full border-t border-neutral-900/50 mt-12">
-        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <h2 className="text-3xl font-extrabold tracking-tight text-neutral-100">
-            SaaS-Grade Features Built for scale
-          </h2>
-          <p className="text-neutral-400 text-sm">
-            Everything you need to host elegant events and gather data without leaks.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-neutral-900/30 border border-neutral-800/60 rounded-2xl p-6 space-y-3">
-            <div className="p-3 bg-purple-950/50 border border-purple-900/50 rounded-xl text-purple-400 w-fit">
-              <Zap className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-neutral-200">Instant Event Landing</h3>
-            <p className="text-neutral-450 text-sm leading-relaxed">
-              Generate static-optimized event invitation pages with live attendee counts, capacity guards, and RSVP deadlines automatically.
+      {/* Platform Features Section */}
+      <section className="py-16 md:py-24 bg-white border-y border-[#E8E5DF]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center mb-16 space-y-3">
+            <span className="text-xs font-semibold text-[#5146E5] uppercase tracking-wider">
+              Engineered for Creators & Communities
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#171923]">
+              Sophisticated Tools for Every Stage of Your Event
+            </h2>
+            <p className="text-[#686D78] text-base leading-relaxed">
+              From real-time discovery to high-integrity registration tracking and attendee management.
             </p>
           </div>
 
-          <div className="bg-neutral-900/30 border border-neutral-800/60 rounded-2xl p-6 space-y-3">
-            <div className="p-3 bg-purple-950/50 border border-purple-900/50 rounded-xl text-purple-400 w-fit">
-              <BarChart3 className="w-5 h-5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="space-y-3.5 p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="w-10 h-10 rounded-xl bg-[#EEEAFE] text-[#5146E5] flex items-center justify-center">
+                <Compass className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-base text-[#171923]">
+                Seamless Event Discovery
+              </h3>
+              <p className="text-sm text-[#686D78] leading-relaxed">
+                Scout live tech gatherings, hackathons, and regional conferences powered by real-time SerpApi intelligence.
+              </p>
             </div>
-            <h3 className="font-bold text-neutral-200">Host Analytics Panel</h3>
-            <p className="text-neutral-450 text-sm leading-relaxed">
-              Track registration totals, monitor incoming attendees with TanStack Table search/filter metrics, and cancel registrations with cascading capacity release.
-            </p>
-          </div>
 
-          <div className="bg-neutral-900/30 border border-neutral-800/60 rounded-2xl p-6 space-y-3">
-            <div className="p-3 bg-purple-950/50 border border-purple-900/50 rounded-xl text-purple-400 w-fit">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="space-y-3.5 p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="w-10 h-10 rounded-xl bg-[#EEEAFE] text-[#5146E5] flex items-center justify-center">
+                <Zap className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-base text-[#171923]">
+                Effortless Event Hosting
+              </h3>
+              <p className="text-sm text-[#686D78] leading-relaxed">
+                Launch elegant event invitation pages in minutes with automated RSVP deadlines and capacity enforcement.
+              </p>
             </div>
-            <h3 className="font-bold text-neutral-200">Protected CSV Export</h3>
-            <p className="text-neutral-450 text-sm leading-relaxed">
-              Download clean list registration exports securely. Authentication ownership reviews ensure that only the creator can query event CSV datasets.
-            </p>
+
+            <div className="space-y-3.5 p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="w-10 h-10 rounded-xl bg-[#EEEAFE] text-[#5146E5] flex items-center justify-center">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-base text-[#171923]">
+                Real-Time Registration
+              </h3>
+              <p className="text-sm text-[#686D78] leading-relaxed">
+                Attendees receive instant confirmations, guest onboarding flows, and personal dashboards to manage tickets.
+              </p>
+            </div>
+
+            <div className="space-y-3.5 p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="w-10 h-10 rounded-xl bg-[#EEEAFE] text-[#5146E5] flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-base text-[#171923]">
+                Attendee Insights & CSV Export
+              </h3>
+              <p className="text-sm text-[#686D78] leading-relaxed">
+                TanStack-powered attendee directories, search filters, and formula-sanitized CSV exports restricted to hosts.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="z-10 border-t border-neutral-900 bg-neutral-950/50 py-12 px-6 mt-auto">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left space-y-2">
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-              EventScout
-            </span>
-            <p className="text-neutral-500 text-xs">
-              &copy; {new Date().getFullYear()} EventScout. Live Event Discovery & Management Platform.
-            </p>
-          </div>
+      <footer className="bg-[#FAF9F6] border-t border-[#E8E5DF] py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-1.5 text-center md:text-left">
+              <Link href="/" className="inline-flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-[#5146E5] flex items-center justify-center text-white">
+                  <Compass className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-lg text-[#171923]">
+                  Event<span className="text-[#5146E5]">Scout</span>
+                </span>
+              </Link>
+              <p className="text-xs text-[#686D78]">
+                &copy; {new Date().getFullYear()} EventScout. Discover and host gatherings across India.
+              </p>
+            </div>
 
-          <div className="flex gap-4 text-neutral-500">
-            <Link
-              href="https://twitter.com"
-              className="hover:text-neutral-300 transition-colors"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </Link>
-            <Link
-              href="https://github.com"
-              className="hover:text-neutral-300 transition-colors"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-              </svg>
-            </Link>
-            <Link
-              href="https://instagram.com"
-              className="hover:text-neutral-300 transition-colors"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-              </svg>
-            </Link>
+            <div className="flex items-center gap-6 text-xs text-[#686D78]">
+              <Link href="/discover" className="hover:text-[#171923] transition-colors">
+                Discover Events
+              </Link>
+              <Link href="/login" className="hover:text-[#171923] transition-colors">
+                Sign In
+              </Link>
+              <Link href="/signup" className="hover:text-[#171923] transition-colors">
+                Host an Event
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

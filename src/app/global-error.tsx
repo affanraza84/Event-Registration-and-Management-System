@@ -16,9 +16,9 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 antialiased font-sans">
-        <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 p-8 rounded-2xl shadow-2xl text-center space-y-6">
-          <div className="w-14 h-14 bg-red-950/60 border border-red-800/60 rounded-2xl flex items-center justify-center mx-auto text-red-400">
+      <body className="min-h-screen bg-[#FAF9F6] text-[#171923] flex flex-col items-center justify-center p-6 antialiased font-sans">
+        <div className="max-w-md w-full bg-white border border-[#E8E5DF] p-8 rounded-2xl shadow-[0_8px_30px_rgba(23,25,35,0.06)] text-center space-y-6">
+          <div className="w-14 h-14 bg-[#FEF2F2] rounded-2xl flex items-center justify-center mx-auto text-[#DC2626]">
             <svg
               className="w-7 h-7"
               fill="none"
@@ -35,16 +35,16 @@ export default function GlobalError({
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight text-neutral-100">
+            <h1 className="text-2xl font-bold tracking-tight text-[#171923]">
               Application Error
             </h1>
-            <p className="text-sm text-neutral-400 leading-relaxed">
-              A critical server error occurred. Please verify your environment configuration (such as database credentials) and reload.
+            <p className="text-sm text-[#686D78] leading-relaxed">
+              A critical server error occurred. Please verify your environment configuration and reload.
             </p>
           </div>
 
           {error.digest && (
-            <div className="bg-neutral-950/80 border border-neutral-800 px-3 py-2 rounded-xl text-xs text-neutral-400 font-mono">
+            <div className="bg-[#FAF9F6] border border-[#E8E5DF] px-3 py-2 rounded-xl text-xs text-[#686D78] font-mono">
               Error digest: {error.digest}
             </div>
           )}
@@ -52,7 +52,7 @@ export default function GlobalError({
           <div className="pt-2">
             <button
               onClick={() => reset()}
-              className="w-full px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-lg shadow-purple-950/30"
+              className="w-full px-5 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-xs"
             >
               Reload Page
             </button>

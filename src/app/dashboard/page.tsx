@@ -5,7 +5,7 @@ import { getHostDashboardDataAction } from "@/actions/events";
 import DashboardClient from "./DashboardClient";
 
 export const metadata = {
-  title: "Host Dashboard | Luma",
+  title: "Host Dashboard | EventScout",
   description: "Manage your hosted experiences, RSVPs, and attendees.",
 };
 
@@ -24,15 +24,15 @@ export default async function DashboardPage() {
 
   if (result.error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-950 text-neutral-100 p-4">
-        <div className="text-center p-8 bg-neutral-900 border border-neutral-800 rounded-2xl max-w-md shadow-2xl">
-          <h2 className="text-xl font-bold text-red-500 mb-2">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] text-[#171923] p-4">
+        <div className="text-center p-8 bg-white border border-[#E8E5DF] rounded-2xl max-w-md shadow-xs">
+          <h2 className="text-xl font-bold text-[#DC2626] mb-2">
             Error Loading Dashboard
           </h2>
-          <p className="text-neutral-400 text-sm mb-6">{result.error}</p>
+          <p className="text-[#686D78] text-sm mb-6">{result.error}</p>
           <a
             href="/dashboard"
-            className="inline-block px-5 py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-white text-sm font-medium transition-all"
+            className="inline-block px-5 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] rounded-xl text-white text-sm font-medium transition-all shadow-xs"
           >
             Retry
           </a>

@@ -19,12 +19,14 @@ import {
   FilePlus2,
   AlertTriangle,
   X,
+  CheckCircle2,
 } from "lucide-react";
 import { IDiscoveredEvent, DiscoveryResponse } from "@/types/discovery";
 import {
   evaluateDraftEligibility,
   buildDraftUrlParams,
 } from "@/utils/draftHelper";
+import { getEventCover } from "@/lib/eventCovers";
 
 interface DiscoverClientProps {
   initialValues?: {
@@ -45,9 +47,9 @@ interface ExampleQuery {
 
 const EXAMPLE_QUERIES: ExampleQuery[] = [
   {
-    label: "AI meetups in Ranchi",
+    label: "AI meetups in Bengaluru",
     query: "AI meetups",
-    location: "Ranchi",
+    location: "Bengaluru",
     category: "AI",
     date: "",
   },
@@ -59,16 +61,16 @@ const EXAMPLE_QUERIES: ExampleQuery[] = [
     date: "",
   },
   {
-    label: "Web development conferences in Bengaluru",
+    label: "Web development conferences in Mumbai",
     query: "Web development conferences",
-    location: "Bengaluru",
+    location: "Mumbai",
     category: "Web Development",
     date: "",
   },
   {
-    label: "Student technology events in Jharkhand",
-    query: "Student technology events",
-    location: "Jharkhand",
+    label: "Student tech gatherings in Delhi NCR",
+    query: "Student tech events",
+    location: "Delhi NCR",
     category: "Student Events",
     date: "",
   },
@@ -86,12 +88,12 @@ const POPULAR_CATEGORIES = [
 ];
 
 const POPULAR_CITIES = [
-  "Ranchi",
   "Bengaluru",
   "Delhi NCR",
   "Mumbai",
   "Hyderabad",
   "Pune",
+  "Ranchi",
   "Kolkata",
   "India",
 ];
@@ -99,15 +101,15 @@ const POPULAR_CITIES = [
 function getCategoryBadgeClass(category: string): string {
   switch (category) {
     case "Hackathons and competitions":
-      return "bg-emerald-950/70 text-emerald-300 border-emerald-800/60";
+      return "bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]";
     case "Meetups and networking":
-      return "bg-blue-950/70 text-blue-300 border-blue-800/60";
+      return "bg-[#EEEAFE] text-[#5146E5] border-[#DDD6FE]";
     case "Conferences and workshops":
-      return "bg-purple-950/70 text-purple-300 border-purple-800/60";
+      return "bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]";
     case "Student and campus events":
-      return "bg-amber-950/70 text-amber-300 border-amber-800/60";
+      return "bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]";
     default:
-      return "bg-neutral-900/80 text-neutral-400 border-neutral-800";
+      return "bg-[#FAF9F6] text-[#686D78] border-[#E8E5DF]";
   }
 }
 
@@ -172,7 +174,6 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
       category: string;
       date: string;
     }) => {
-      // Input Validation: Require at least one filter field
       const trimmedQuery = searchParams.query.trim();
       const trimmedLocation = searchParams.location.trim();
       const trimmedCategory =
@@ -192,7 +193,6 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
       setErrorMessage(null);
       setSelectedCategoryFilter("All");
 
-      // Cancel any ongoing search request to prevent stale UI updates
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -220,7 +220,6 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
           signal: controller.signal,
         });
 
-        // Discard response if a newer search request has been triggered
         if (currentRequestId !== latestRequestIdRef.current) {
           return;
         }
@@ -253,52 +252,45 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
           setSearchMetadata({
             queryText: data.searchQuery,
             total: 0,
-            disclaimer:
-              data.disclaimer ||
-              "Google Search results are web discovery results, not verified event records.",
+            disclaimer: data.disclaimer || "",
           });
           setStatus("empty");
         }
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") {
-          // Request was intentionally aborted; do not show error
           return;
         }
-
-        if (currentRequestId !== latestRequestIdRef.current) {
-          return;
+        if (currentRequestId === latestRequestIdRef.current) {
+          setErrorMessage(
+            "Network error while connecting to Event Discovery Service. Please try again."
+          );
+          setStatus("error");
+          setResults([]);
         }
-
-        const msg =
-          err instanceof Error
-            ? err.message
-            : "Network error: Unable to reach the live discovery server.";
-        setErrorMessage(msg);
-        setStatus("error");
-        setResults([]);
       }
     },
     []
   );
 
-  // Auto-search on initial load if URL parameters were provided
   useEffect(() => {
     const hasInitialSearch = Boolean(
       initialValues?.query || initialValues?.location || initialValues?.category
     );
-    if (!hasInitialSearch) return;
 
-    const timer = setTimeout(() => {
-      performSearch({
-        query: initialValues?.query || "",
-        location: initialValues?.location || "",
-        category: initialValues?.category || "",
-        date: initialValues?.date || "",
-      });
-    }, 0);
+    let timer: NodeJS.Timeout | undefined;
+    if (hasInitialSearch) {
+      timer = setTimeout(() => {
+        performSearch({
+          query: initialValues?.query || "",
+          location: initialValues?.location || "",
+          category: initialValues?.category || "",
+          date: initialValues?.date || "",
+        });
+      }, 0);
+    }
 
     return () => {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -315,6 +307,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
     setLocation(example.location);
     setCategory(example.category);
     setDate(example.date);
+    setValidationError(null);
     performSearch({
       query: example.query,
       location: example.location,
@@ -325,7 +318,13 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
 
   const handleCityQuickPick = (cityName: string) => {
     setLocation(cityName);
-    performSearch({ query, location: cityName, category, date });
+    setValidationError(null);
+    performSearch({
+      query,
+      location: cityName,
+      category,
+      date,
+    });
   };
 
   const handleReset = () => {
@@ -333,38 +332,34 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
     setLocation("");
     setCategory("");
     setDate("");
-    setSelectedCategoryFilter("All");
-    setValidationError(null);
-    setErrorMessage(null);
     setResults([]);
-    setSearchMetadata(null);
     setStatus("idle");
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+    setSearchMetadata(null);
+    setErrorMessage(null);
+    setValidationError(null);
+    setSelectedCategoryFilter("All");
   };
 
   return (
-    <div className="space-y-10">
-      {/* Page Header */}
-      <header className="space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-950/50 border border-purple-800/40 rounded-full text-purple-300 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          SerpApi Live Discovery Engine
+    <div className="space-y-10 animate-fade-in">
+      {/* Editorial Page Header */}
+      <header className="space-y-3 pb-6 border-b border-[#E8E5DF]">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEAFE] border border-[#DDD6FE] text-[#5146E5] text-xs font-semibold uppercase tracking-wider">
+          <Sparkles className="w-3.5 h-3.5" />
+          Live Web Intelligence Engine
         </div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-100">
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#171923]">
           Discover Live Tech Events & Hackathons
         </h1>
-        <p className="text-neutral-400 text-base sm:text-lg max-w-3xl leading-relaxed">
-          Search real-time tech conferences, hackathons, and developer meetups across India.
-          Results are queried live using SerpApi Google Search and ranked with transparent relevance signals.
+        <p className="text-[#686D78] text-base sm:text-lg max-w-2xl leading-relaxed">
+          Search real-time tech conferences, hackathons, and developer meetups across India with transparent relevance ranking.
         </p>
       </header>
 
       {/* Main Search Panel */}
       <section
         aria-labelledby="search-section-heading"
-        className="bg-neutral-900/40 border border-neutral-800/80 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md space-y-6"
+        className="bg-white border border-[#E8E5DF] rounded-2xl p-6 sm:p-8 shadow-[0_2px_12px_rgba(23,25,35,0.04)] space-y-6"
       >
         <h2 id="search-section-heading" className="sr-only">
           Event Search Form
@@ -376,12 +371,12 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             <div className="space-y-1.5">
               <label
                 htmlFor={queryInputId}
-                className="block text-xs font-semibold uppercase tracking-wider text-neutral-400"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#686D78]"
               >
                 Keyword or Topic
               </label>
               <div className="relative">
-                <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id={queryInputId}
                   type="text"
@@ -391,7 +386,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                     if (validationError) setValidationError(null);
                   }}
                   placeholder="e.g. AI Meetups, Hackathons..."
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-950/80 border border-neutral-800 focus:border-purple-500/80 rounded-xl text-sm text-neutral-100 placeholder:text-neutral-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none transition-all"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border border-[#E8E5DF] focus:border-[#5146E5] focus:bg-white rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:ring-2 focus:ring-[#5146E5]/15 focus:outline-none transition-all"
                   disabled={status === "loading"}
                 />
               </div>
@@ -401,12 +396,12 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             <div className="space-y-1.5">
               <label
                 htmlFor={locationInputId}
-                className="block text-xs font-semibold uppercase tracking-wider text-neutral-400"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#686D78]"
               >
                 City or Region
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <MapPin className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id={locationInputId}
                   type="text"
@@ -415,8 +410,8 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                     setLocation(e.target.value);
                     if (validationError) setValidationError(null);
                   }}
-                  placeholder="e.g. Ranchi, Bengaluru, India..."
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-950/80 border border-neutral-800 focus:border-purple-500/80 rounded-xl text-sm text-neutral-100 placeholder:text-neutral-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none transition-all"
+                  placeholder="e.g. Bengaluru, Delhi NCR, India..."
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border border-[#E8E5DF] focus:border-[#5146E5] focus:bg-white rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:ring-2 focus:ring-[#5146E5]/15 focus:outline-none transition-all"
                   disabled={status === "loading"}
                 />
               </div>
@@ -426,12 +421,12 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             <div className="space-y-1.5">
               <label
                 htmlFor={categorySelectId}
-                className="block text-xs font-semibold uppercase tracking-wider text-neutral-400"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#686D78]"
               >
                 Category
               </label>
               <div className="relative">
-                <SlidersHorizontal className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <SlidersHorizontal className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <select
                   id={categorySelectId}
                   value={category}
@@ -439,7 +434,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                     setCategory(e.target.value);
                     if (validationError) setValidationError(null);
                   }}
-                  className="w-full pl-10 pr-8 py-2.5 bg-neutral-950/80 border border-neutral-800 focus:border-purple-500/80 rounded-xl text-sm text-neutral-100 focus:ring-2 focus:ring-purple-500/20 focus:outline-none transition-all appearance-none cursor-pointer"
+                  className="w-full pl-10 pr-8 py-2.5 bg-[#FAF9F6] border border-[#E8E5DF] focus:border-[#5146E5] focus:bg-white rounded-xl text-sm text-[#171923] focus:ring-2 focus:ring-[#5146E5]/15 focus:outline-none transition-all appearance-none cursor-pointer"
                   disabled={status === "loading"}
                 >
                   <option value="">Select Category (Optional)</option>
@@ -456,19 +451,19 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             <div className="space-y-1.5">
               <label
                 htmlFor={dateInputId}
-                className="block text-xs font-semibold uppercase tracking-wider text-neutral-400"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#686D78]"
               >
                 Date or Timeframe
               </label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Calendar className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id={dateInputId}
                   type="text"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   placeholder="e.g. October 2026, This Weekend..."
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-neutral-950/80 border border-neutral-800 focus:border-purple-500/80 rounded-xl text-sm text-neutral-100 placeholder:text-neutral-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none transition-all"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border border-[#E8E5DF] focus:border-[#5146E5] focus:bg-white rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:ring-2 focus:ring-[#5146E5]/15 focus:outline-none transition-all"
                   disabled={status === "loading"}
                 />
               </div>
@@ -479,20 +474,20 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
           {validationError && (
             <div
               role="alert"
-              className="p-3 bg-amber-950/30 border border-amber-800/50 rounded-xl text-amber-300 text-xs flex items-center gap-2"
+              className="p-3 bg-[#FFFBEB] border border-[#FDE68A] rounded-xl text-[#92400E] text-xs flex items-center gap-2"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#D97706]" />
               <span>{validationError}</span>
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Buttons & Quick Pick */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <div className="flex items-center gap-2">
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-md shadow-purple-950/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] text-white font-medium text-sm rounded-xl transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:ring-2 focus:ring-[#5146E5]/20 focus:outline-none active:scale-[0.99]"
               >
                 {status === "loading" ? (
                   <>
@@ -512,7 +507,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                   type="button"
                   onClick={handleReset}
                   disabled={status === "loading"}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white rounded-xl text-sm transition-all cursor-pointer focus:ring-2 focus:ring-neutral-700 focus:outline-none"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] hover:border-[#D5D1C8] text-[#686D78] hover:text-[#171923] rounded-xl text-sm transition-all cursor-pointer shadow-2xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Reset
@@ -521,9 +516,9 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             </div>
 
             {/* City Quick Pills */}
-            <div className="hidden lg:flex items-center gap-1.5 text-xs text-neutral-400">
-              <span className="font-semibold text-neutral-500 mr-1">Quick Cities:</span>
-              {POPULAR_CITIES.slice(0, 5).map((city) => (
+            <div className="hidden lg:flex items-center gap-1.5 text-xs text-[#686D78]">
+              <span className="font-semibold text-[#171923] mr-1">Quick Cities:</span>
+              {POPULAR_CITIES.slice(0, 6).map((city) => (
                 <button
                   key={city}
                   type="button"
@@ -531,8 +526,8 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                   disabled={status === "loading"}
                   className={`px-2.5 py-1 rounded-lg border text-xs transition-colors cursor-pointer ${
                     location.toLowerCase() === city.toLowerCase()
-                      ? "bg-purple-950/60 border-purple-800 text-purple-300"
-                      : "bg-neutral-950/60 border-neutral-800 hover:border-neutral-700 text-neutral-300"
+                      ? "bg-[#EEEAFE] border-[#DDD6FE] text-[#5146E5] font-semibold"
+                      : "bg-[#FAF9F6] border-[#E8E5DF] hover:border-[#D5D1C8] text-[#686D78] hover:text-[#171923]"
                   }`}
                 >
                   {city}
@@ -543,9 +538,9 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         </form>
 
         {/* Example Queries Section */}
-        <div className="border-t border-neutral-800/60 pt-4 space-y-2">
-          <div className="text-xs font-semibold text-neutral-400">
-            Suggested Search Queries:
+        <div className="border-t border-[#E8E5DF] pt-4 space-y-2">
+          <div className="text-xs font-semibold text-[#686D78]">
+            Popular Search Ideas:
           </div>
           <div className="flex flex-wrap gap-2">
             {EXAMPLE_QUERIES.map((example) => (
@@ -554,10 +549,10 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                 type="button"
                 onClick={() => handleApplyExample(example)}
                 disabled={status === "loading"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-950/60 hover:bg-neutral-900 border border-neutral-800 hover:border-purple-800/60 rounded-lg text-xs text-neutral-300 hover:text-purple-300 transition-all cursor-pointer focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF9F6] hover:bg-white border border-[#E8E5DF] hover:border-[#5146E5]/40 rounded-lg text-xs text-[#686D78] hover:text-[#5146E5] transition-all cursor-pointer shadow-2xs"
               >
                 <span>{example.label}</span>
-                <ArrowRight className="w-3 h-3 text-neutral-500" />
+                <ArrowRight className="w-3 h-3 text-[#9CA3AF]" />
               </button>
             ))}
           </div>
@@ -569,24 +564,24 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {/* Results Header when active */}
         {searchMetadata && status === "success" && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-neutral-900/30 border border-neutral-800/60 rounded-xl p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-[#E8E5DF] rounded-xl p-4 shadow-xs">
               <div>
                 <h2
                   id="results-heading"
-                  className="text-lg font-bold text-neutral-100 flex items-center gap-2"
+                  className="text-lg font-bold text-[#171923] flex items-center gap-2"
                 >
-                  <Compass className="w-5 h-5 text-purple-400" />
+                  <Compass className="w-5 h-5 text-[#5146E5]" />
                   Live Discovered Events ({filteredResults.length} of {searchMetadata.total})
                 </h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  Google Search query:{" "}
-                  <span className="font-mono text-purple-300 bg-purple-950/40 px-1.5 py-0.5 rounded">
+                <p className="text-xs text-[#686D78] mt-0.5">
+                  Web search query:{" "}
+                  <span className="font-mono text-[#5146E5] bg-[#EEEAFE] px-1.5 py-0.5 rounded">
                     {searchMetadata.queryText}
                   </span>
                 </p>
               </div>
-              <div className="inline-flex items-center gap-1.5 text-xs text-neutral-400 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800 shrink-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="inline-flex items-center gap-1.5 text-xs text-[#059669] bg-[#ECFDF5] px-3 py-1 rounded-lg border border-[#A7F3D0] shrink-0 font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 Ranked by Relevance
               </div>
             </div>
@@ -594,8 +589,8 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             {/* Client-Side Category Filtering Bar */}
             {Object.keys(categoryCounts).length > 2 && (
               <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                <span className="font-semibold text-neutral-500 shrink-0 mr-1">
-                  Filter Category:
+                <span className="font-semibold text-[#686D78] shrink-0 mr-1">
+                  Category:
                 </span>
                 {Object.entries(categoryCounts).map(([catName, count]) => {
                   const isSelected = selectedCategoryFilter === catName;
@@ -606,8 +601,8 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                       onClick={() => setSelectedCategoryFilter(catName)}
                       className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer shrink-0 ${
                         isSelected
-                          ? "bg-purple-900/60 border-purple-500 text-purple-200 shadow-sm shadow-purple-950/50"
-                          : "bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-700"
+                          ? "bg-[#5146E5] border-[#5146E5] text-white shadow-xs"
+                          : "bg-white border-[#E8E5DF] text-[#686D78] hover:text-[#171923] hover:border-[#D5D1C8]"
                       }`}
                     >
                       {catName} ({count})
@@ -623,11 +618,11 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {(status === "success" || status === "empty") && (
           <div
             role="note"
-            className="p-3.5 bg-purple-950/20 border border-purple-900/40 rounded-xl text-neutral-300 text-xs flex items-start gap-2.5 leading-relaxed"
+            className="p-3.5 bg-white border border-[#E8E5DF] rounded-xl text-[#686D78] text-xs flex items-start gap-2.5 leading-relaxed shadow-2xs"
           >
-            <AlertCircle className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-[#5146E5] shrink-0 mt-0.5" />
             <div>
-              <strong className="text-purple-300 font-semibold">Discovery Notice:</strong>{" "}
+              <strong className="text-[#171923] font-semibold">Discovery Notice:</strong>{" "}
               {searchMetadata?.disclaimer ||
                 "Google Search results are live web discovery results, not verified event records. Please verify dates, location, and ticket registration directly on the source website."}
             </div>
@@ -638,16 +633,16 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {status === "loading" && (
           <div
             aria-live="polite"
-            className="p-12 text-center space-y-4 bg-neutral-900/20 border border-neutral-800/60 rounded-2xl"
+            className="p-12 text-center space-y-4 bg-white border border-[#E8E5DF] rounded-2xl shadow-xs"
           >
-            <div className="inline-flex p-3 bg-purple-950/40 border border-purple-800/40 rounded-full text-purple-400">
+            <div className="inline-flex p-3 bg-[#EEEAFE] rounded-full text-[#5146E5]">
               <Loader2 className="w-7 h-7 animate-spin" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-neutral-200">
+              <h3 className="text-lg font-bold text-[#171923]">
                 Searching Live Web Events
               </h3>
-              <p className="text-sm text-neutral-400 max-w-md mx-auto">
+              <p className="text-sm text-[#686D78] max-w-md mx-auto">
                 Querying Google Search via SerpApi, deduplicating records, and analyzing relevance signals...
               </p>
             </div>
@@ -658,16 +653,16 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {status === "error" && (
           <div
             role="alert"
-            className="p-8 sm:p-10 text-center space-y-4 bg-red-950/20 border border-red-900/50 rounded-2xl max-w-2xl mx-auto"
+            className="p-8 sm:p-10 text-center space-y-4 bg-[#FEF2F2] border border-[#FECACA] rounded-2xl max-w-2xl mx-auto shadow-xs"
           >
-            <div className="inline-flex p-3 bg-red-950/60 border border-red-800/60 rounded-full text-red-400">
+            <div className="inline-flex p-3 bg-[#FEE2E2] rounded-full text-[#DC2626]">
               <AlertCircle className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-red-300">
-                Search Discovery Error
+              <h3 className="text-lg font-bold text-[#DC2626]">
+                Search Discovery Notice
               </h3>
-              <p className="text-sm text-neutral-300 leading-relaxed">
+              <p className="text-sm text-[#171923] leading-relaxed">
                 {errorMessage ||
                   "An error occurred while fetching live events. Please check your query or try again."}
               </p>
@@ -678,7 +673,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                 onClick={() =>
                   performSearch({ query, location, category, date })
                 }
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-900/60 hover:bg-red-800 text-white rounded-xl text-sm font-medium transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-xl text-sm font-medium transition-all cursor-pointer shadow-xs"
               >
                 <RotateCcw className="w-4 h-4" />
                 Retry Search
@@ -691,16 +686,16 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {status === "empty" && (
           <div
             aria-live="polite"
-            className="p-12 text-center space-y-4 bg-neutral-900/20 border border-neutral-800/60 rounded-2xl max-w-lg mx-auto"
+            className="p-12 text-center space-y-4 bg-white border border-[#E8E5DF] rounded-2xl max-w-lg mx-auto shadow-xs"
           >
-            <div className="inline-flex p-3 bg-neutral-900 border border-neutral-800 rounded-full text-neutral-500">
+            <div className="inline-flex p-3 bg-[#FAF9F6] border border-[#E8E5DF] rounded-full text-[#686D78]">
               <Compass className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-neutral-200">
+              <h3 className="text-lg font-bold text-[#171923]">
                 No Matching Events Found
               </h3>
-              <p className="text-sm text-neutral-400">
+              <p className="text-sm text-[#686D78]">
                 We couldn&apos;t find any live public events matching your exact criteria. Try broadening your location, removing category filters, or selecting one of our suggested queries above.
               </p>
             </div>
@@ -715,7 +710,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                   date: "",
                 })
               }
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600/80 hover:bg-purple-600 text-white text-xs font-semibold rounded-xl transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#5146E5] hover:bg-[#4338CA] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-xs"
             >
               Try &quot;Hackathons in India&quot;
             </button>
@@ -724,16 +719,16 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
 
         {/* 4. Idle / Welcoming State */}
         {status === "idle" && (
-          <div className="p-10 sm:p-14 text-center space-y-6 bg-neutral-900/10 border border-dashed border-neutral-800/80 rounded-2xl">
-            <div className="inline-flex p-4 bg-purple-950/30 border border-purple-900/30 rounded-2xl text-purple-400">
+          <div className="p-10 sm:p-14 text-center space-y-6 bg-white border border-dashed border-[#E8E5DF] rounded-2xl">
+            <div className="inline-flex p-4 bg-[#EEEAFE] rounded-2xl text-[#5146E5]">
               <Compass className="w-8 h-8" />
             </div>
             <div className="space-y-2 max-w-xl mx-auto">
-              <h3 className="text-xl font-bold text-neutral-200">
+              <h3 className="text-xl font-bold text-[#171923]">
                 Ready to Scout Upcoming Tech Events
               </h3>
-              <p className="text-neutral-400 text-sm leading-relaxed">
-                Use the search form above or click one of our sample queries to find AI summits, hackathons, and developer gatherings across Ranchi, Bengaluru, and all of India.
+              <p className="text-[#686D78] text-sm leading-relaxed">
+                Use the search form above or click one of our popular queries to find AI summits, hackathons, and developer gatherings across Bengaluru, Delhi NCR, and all of India.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-3 pt-2">
@@ -742,7 +737,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                   key={example.label}
                   type="button"
                   onClick={() => handleApplyExample(example)}
-                  className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl text-xs font-medium text-neutral-300 transition-all cursor-pointer"
+                  className="px-4 py-2 bg-[#FAF9F6] hover:bg-white border border-[#E8E5DF] hover:border-[#5146E5]/40 rounded-xl text-xs font-medium text-[#171923] transition-all cursor-pointer shadow-2xs"
                 >
                   {example.label}
                 </button>
@@ -753,129 +748,140 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
 
         {/* 5. Results Grid */}
         {status === "success" && filteredResults.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredResults.map((event, idx) => {
               const draftEligibility = evaluateDraftEligibility(event);
+              const cover = getEventCover(event.title, event.category, event.id);
+
               return (
                 <article
                   key={event.id || `ev-${idx}`}
-                  className="bg-neutral-900/40 hover:bg-neutral-900/70 border border-neutral-800/80 hover:border-purple-800/50 rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-all duration-200 space-y-4 group"
+                  className="bg-white hover:border-[#D5D1C8] border border-[#E8E5DF] rounded-2xl overflow-hidden shadow-xs hover:shadow-[0_8px_30px_rgba(23,25,35,0.06)] flex flex-col justify-between transition-all duration-200 group"
                 >
-                  <div className="space-y-3">
-                    {/* Top Badges */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      {/* Evidence-Based Category Badge */}
-                      <span
-                        className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-md border ${getCategoryBadgeClass(
-                          event.category
-                        )}`}
-                      >
-                        {event.category}
-                      </span>
-
-                      {/* Source / Domain Pill */}
-                      {event.displayedSource && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-neutral-400 truncate max-w-[180px]">
-                          <Globe className="w-3 h-3 text-neutral-500 shrink-0" />
-                          <span className="truncate">{event.displayedSource}</span>
+                  <div className="space-y-4">
+                    {/* Event Cover Banner */}
+                    <div className="relative aspect-[21/9] w-full overflow-hidden bg-[#FAF9F6]">
+                      <img
+                        src={cover.url}
+                        alt={cover.alt}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        <span
+                          className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border shadow-2xs backdrop-blur-sm ${getCategoryBadgeClass(
+                            event.category
+                          )}`}
+                        >
+                          {event.category}
                         </span>
-                      )}
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold text-neutral-100 group-hover:text-purple-300 transition-colors line-clamp-2 leading-snug">
-                      {event.title}
-                    </h3>
-
-                    {/* Snippet / Description */}
-                    <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed line-clamp-3">
-                      {event.snippet}
-                    </p>
-
-                    {/* Metadata Chips: Verified Dates, Locations, and Transparent Signals */}
-                    <div className="space-y-2 pt-1">
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        {/* Date Indicator (Confirmed vs Not Confirmed) */}
-                        {event.hasConfirmedDate ? (
-                          <div
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-950 border border-emerald-900/50 text-emerald-300 rounded-lg"
-                            title="Date was explicitly confirmed from search result metadata"
-                          >
-                            <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            <span className="truncate max-w-[200px]">{event.dateDisplay}</span>
-                          </div>
-                        ) : (
-                          <div
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-950/80 border border-neutral-800 text-neutral-400 rounded-lg"
-                            title="No explicit date could be confirmed from search snippet"
-                          >
-                            <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                            <span>Date not confirmed</span>
-                          </div>
-                        )}
-
-                        {/* Location Indicator (Confirmed vs Unverified) */}
-                        {event.hasConfirmedLocation ? (
-                          <div
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 rounded-lg"
-                            title="Location identified from event venue metadata"
-                          >
-                            <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                            <span className="truncate max-w-[200px]">{event.locationDisplay}</span>
-                          </div>
-                        ) : (
-                          <div
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-950/80 border border-neutral-800 text-neutral-400 rounded-lg"
-                            title="Venue location not confirmed"
-                          >
-                            <MapPin className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                            <span>Location unverified</span>
-                          </div>
-                        )}
                       </div>
-
-                      {/* Transparent Relevance Signals Pill */}
-                      {event.relevanceSignals && event.relevanceSignals.length > 0 && (
-                        <div className="flex items-center gap-1 text-[11px] text-purple-300/80 bg-purple-950/30 px-2 py-0.5 rounded-md border border-purple-900/30 w-fit">
-                          <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
-                          <span className="truncate max-w-[280px]">
-                            {event.relevanceSignals.slice(0, 2).join(" • ")}
+                      {event.displayedSource && (
+                        <div className="absolute top-3 right-3">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-white/95 text-[#171923] px-2.5 py-1 rounded-md border border-[#E8E5DF] shadow-2xs backdrop-blur-sm">
+                            <Globe className="w-3 h-3 text-[#686D78] shrink-0" />
+                            <span className="truncate max-w-[140px]">{event.displayedSource}</span>
                           </span>
                         </div>
                       )}
                     </div>
+
+                    <div className="p-5 pt-0 space-y-3">
+                      {/* Title */}
+                      <h3 className="text-lg font-bold text-[#171923] group-hover:text-[#5146E5] transition-colors line-clamp-2 leading-snug">
+                        {event.title}
+                      </h3>
+
+                      {/* Snippet / Description */}
+                      <p className="text-[#686D78] text-xs sm:text-sm leading-relaxed line-clamp-3">
+                        {event.snippet}
+                      </p>
+
+                      {/* Metadata Chips: Verified Dates, Locations, and Transparent Signals */}
+                      <div className="space-y-2 pt-1">
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {/* Date Indicator (Confirmed vs Not Confirmed) */}
+                          {event.hasConfirmedDate ? (
+                            <div
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#ECFDF5] border border-[#A7F3D0] text-[#059669] rounded-lg font-medium"
+                              title="Date was explicitly confirmed from search result metadata"
+                            >
+                              <Calendar className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate max-w-[200px]">{event.dateDisplay}</span>
+                            </div>
+                          ) : (
+                            <div
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF9F6] border border-[#E8E5DF] text-[#686D78] rounded-lg"
+                              title="No explicit date could be confirmed from search snippet"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                              <span>Date not confirmed</span>
+                            </div>
+                          )}
+
+                          {/* Location Indicator (Confirmed vs Unverified) */}
+                          {event.hasConfirmedLocation ? (
+                            <div
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF9F6] border border-[#E8E5DF] text-[#171923] rounded-lg"
+                              title="Location identified from event venue metadata"
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-[#5146E5] shrink-0" />
+                              <span className="truncate max-w-[200px]">{event.locationDisplay}</span>
+                            </div>
+                          ) : (
+                            <div
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF9F6] border border-[#E8E5DF] text-[#686D78] rounded-lg"
+                              title="Venue location not confirmed"
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                              <span>Location unverified</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Transparent Relevance Signals Pill */}
+                        {event.relevanceSignals && event.relevanceSignals.length > 0 && (
+                          <div className="flex items-center gap-1 text-[11px] text-[#5146E5] bg-[#EEEAFE] px-2.5 py-0.5 rounded-md border border-[#DDD6FE] w-fit font-medium">
+                            <Sparkles className="w-3 h-3 text-[#5146E5] shrink-0" />
+                            <span className="truncate max-w-[280px]">
+                              {event.relevanceSignals.slice(0, 2).join(" • ")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Footer Actions: Source Link & Host Draft Action */}
-                  <div className="border-t border-neutral-800 pt-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-                    <div className="text-[11px] text-neutral-500 truncate max-w-[150px]">
-                      {event.displayedSource || "Source link"}
+                  <div className="px-5 py-3.5 bg-[#FAF9F6] border-t border-[#E8E5DF] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                    <div className="text-[11px] text-[#686D78] truncate max-w-[150px]">
+                      {event.displayedSource || "Source website"}
                     </div>
                     <div className="flex items-center gap-2 shrink-0 flex-wrap">
                       <a
                         href={event.originalUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-neutral-300 hover:text-white rounded-lg transition-all focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] hover:border-[#D5D1C8] text-xs font-semibold text-[#171923] rounded-lg transition-all shadow-2xs focus:ring-2 focus:ring-[#5146E5]/20 focus:outline-none"
                         title="Review external details on source website"
                       >
                         <span>View Source</span>
-                        <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+                        <ExternalLink className="w-3.5 h-3.5 text-[#686D78]" />
                       </a>
 
                       {draftEligibility.isEligible ? (
                         <button
                           type="button"
                           onClick={() => setDraftModalEvent(event)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-950/70 hover:bg-purple-900 border border-purple-800/80 text-purple-200 hover:text-white text-xs font-semibold rounded-lg transition-all cursor-pointer focus:ring-2 focus:ring-purple-500 focus:outline-none shadow-sm shadow-purple-950/40"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#5146E5] hover:bg-[#4338CA] text-white text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-xs focus:ring-2 focus:ring-[#5146E5]/20 focus:outline-none"
                           title="Use details from this search result to prepare an unverified event draft on EventScout"
                         >
-                          <FilePlus2 className="w-3.5 h-3.5 text-purple-400" />
-                          <span>Use Details to Create Event</span>
+                          <FilePlus2 className="w-3.5 h-3.5" />
+                          <span>Prepare Host Draft</span>
                         </button>
                       ) : (
                         <span
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-950/80 border border-neutral-800 text-neutral-500 text-xs rounded-lg cursor-not-allowed"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#FAF9F6] border border-[#E8E5DF] text-[#9CA3AF] text-xs rounded-lg cursor-not-allowed"
                           title={draftEligibility.reason || "Search result is too sparse to prepare a draft."}
                         >
                           <span>Incomplete for Draft</span>
@@ -893,14 +899,14 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {status === "success" &&
           filteredResults.length === 0 &&
           results.length > 0 && (
-            <div className="p-8 text-center space-y-3 bg-neutral-900/20 border border-neutral-800 rounded-xl">
-              <p className="text-sm text-neutral-400">
+            <div className="p-8 text-center space-y-3 bg-white border border-[#E8E5DF] rounded-xl shadow-xs">
+              <p className="text-sm text-[#686D78]">
                 No results found under &quot;{selectedCategoryFilter}&quot;.
               </p>
               <button
                 type="button"
                 onClick={() => setSelectedCategoryFilter("All")}
-                className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-lg text-xs font-semibold text-neutral-200"
+                className="px-3.5 py-1.5 bg-[#5146E5] hover:bg-[#4338CA] text-white rounded-lg text-xs font-semibold shadow-xs"
               >
                 Show All Categories ({results.length})
               </button>
@@ -914,19 +920,19 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="draft-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171923]/50 backdrop-blur-xs animate-fade-in"
         >
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-[0_20px_50px_rgba(23,25,35,0.15)] relative">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-purple-950/80 border border-purple-800/80 rounded-xl text-purple-400">
+                <div className="p-2 bg-[#EEEAFE] rounded-xl text-[#5146E5]">
                   <FilePlus2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 id="draft-modal-title" className="text-base font-bold text-neutral-100">
+                  <h3 id="draft-modal-title" className="text-base font-bold text-[#171923]">
                     Prepare Event Draft
                   </h3>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-xs text-[#686D78]">
                     Transfer external discovery details to host review form
                   </p>
                 </div>
@@ -934,7 +940,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
               <button
                 type="button"
                 onClick={() => setDraftModalEvent(null)}
-                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+                className="text-[#686D78] hover:text-[#171923] p-1 rounded-lg hover:bg-[#FAF9F6] transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
@@ -942,44 +948,44 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
             </div>
 
             {/* Warning Callout */}
-            <div className="p-3.5 bg-amber-950/30 border border-amber-900/50 rounded-xl text-xs text-amber-200 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <div className="p-3.5 bg-[#FFFBEB] border border-[#FDE68A] rounded-xl text-xs text-[#92400E] space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-[#B45309]">
+                <AlertTriangle className="w-4 h-4 text-[#D97706] shrink-0" />
                 <span>Unverified External Data</span>
               </div>
-              <p className="leading-relaxed text-amber-300/80">
+              <p className="leading-relaxed">
                 This search result is NOT verified. Preparing a draft allows an authenticated host to review, adjust, and complete all required details before publishing to EventScout.
               </p>
             </div>
 
             {/* Draft Details Preview */}
-            <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-xl p-3.5 space-y-2.5 text-xs">
+            <div className="bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl p-3.5 space-y-2.5 text-xs">
               <div>
-                <span className="text-neutral-500 font-semibold block text-[10px] uppercase">Title:</span>
-                <p className="text-neutral-200 font-medium">{draftModalEvent.title}</p>
+                <span className="text-[#686D78] font-semibold block text-[10px] uppercase">Title:</span>
+                <p className="text-[#171923] font-medium">{draftModalEvent.title}</p>
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-neutral-800 pt-2">
-                <span className="text-neutral-500 font-semibold text-[10px] uppercase">Date:</span>
-                <span className={draftModalEvent.hasConfirmedDate ? "text-emerald-400 font-medium" : "text-amber-400 font-medium"}>
+              <div className="flex items-center justify-between gap-2 border-t border-[#E8E5DF] pt-2">
+                <span className="text-[#686D78] font-semibold text-[10px] uppercase">Date:</span>
+                <span className={draftModalEvent.hasConfirmedDate ? "text-[#059669] font-medium" : "text-[#D97706] font-medium"}>
                   {draftModalEvent.hasConfirmedDate ? draftModalEvent.dateDisplay : "Unconfirmed (Host must enter date)"}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-neutral-800 pt-2">
-                <span className="text-neutral-500 font-semibold text-[10px] uppercase">Location:</span>
-                <span className={draftModalEvent.hasConfirmedLocation ? "text-neutral-200" : "text-amber-400 font-medium"}>
+              <div className="flex items-center justify-between gap-2 border-t border-[#E8E5DF] pt-2">
+                <span className="text-[#686D78] font-semibold text-[10px] uppercase">Location:</span>
+                <span className={draftModalEvent.hasConfirmedLocation ? "text-[#171923]" : "text-[#D97706] font-medium"}>
                   {draftModalEvent.hasConfirmedLocation ? draftModalEvent.locationDisplay : "Unverified (Host must specify venue)"}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-neutral-800 pt-2">
-                <span className="text-neutral-500 font-semibold text-[10px] uppercase">Source URL:</span>
+              <div className="flex items-center justify-between gap-2 border-t border-[#E8E5DF] pt-2">
+                <span className="text-[#686D78] font-semibold text-[10px] uppercase">Source URL:</span>
                 <a
                   href={draftModalEvent.originalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-purple-400 hover:text-purple-300 inline-flex items-center gap-1 truncate max-w-[200px]"
+                  className="text-[#5146E5] hover:text-[#4338CA] inline-flex items-center gap-1 truncate max-w-[200px]"
                 >
                   <span className="truncate">{draftModalEvent.originalUrl}</span>
                   <ExternalLink className="w-3 h-3 shrink-0" />
@@ -992,7 +998,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
               <button
                 type="button"
                 onClick={() => setDraftModalEvent(null)}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 text-xs font-semibold rounded-xl transition-all cursor-pointer"
+                className="px-4 py-2 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] hover:border-[#D5D1C8] text-[#171923] text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
@@ -1003,7 +1009,7 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                   setDraftModalEvent(null);
                   router.push(`/events/new?${params}`);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-lg shadow-purple-950/30"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#5146E5] hover:bg-[#4338CA] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-xs active:scale-[0.99]"
               >
                 <span>Continue to Host Review Form</span>
                 <ArrowRight className="w-3.5 h-3.5" />

@@ -5,7 +5,7 @@ import DiscoverClient from "./DiscoverClient";
 export const metadata: Metadata = {
   title: "Live Event Discovery | EventScout",
   description:
-    "Discover live hackathons, tech meetups, workshops, and developer conferences across India and globally powered by live web search.",
+    "Discover live hackathons, tech meetups, workshops, and developer conferences across India powered by live web search.",
 };
 
 interface DiscoverPageProps {
@@ -30,24 +30,9 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col relative overflow-hidden">
-      {/* Background ambient gradient glow effects */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[720px] h-[450px] bg-purple-600/10 rounded-full blur-[140px] pointer-events-none"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute top-1/3 right-10 w-96 h-96 bg-amber-500/5 rounded-full blur-[140px] pointer-events-none"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-1/4 left-10 w-96 h-96 bg-indigo-600/5 rounded-full blur-[140px] pointer-events-none"
-        aria-hidden="true"
-      />
-
+    <div className="min-h-screen bg-[#FAF9F6] text-[#171923] flex flex-col">
       <Navbar />
-
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <DiscoverClient initialValues={initialValues} />
       </main>
     </div>

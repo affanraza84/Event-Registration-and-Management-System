@@ -7,8 +7,8 @@ import { IEventDocument } from "@/models/Event";
 import MyEventsClient from "./MyEventsClient";
 
 export const metadata = {
-  title: "My Events | Luma",
-  description: "Manage your registered event tickets and RSVPs.",
+  title: "My Registrations | EventScout",
+  description: "Manage your registered event tickets and community RSVPs.",
 };
 
 export default async function MyEventsPage() {
@@ -19,7 +19,6 @@ export default async function MyEventsPage() {
   }
 
   if (session.user.role !== "attendee") {
-    // If a host navigates here, redirect them to the host dashboard
     redirect("/dashboard");
   }
 
@@ -41,17 +40,15 @@ export default async function MyEventsPage() {
   try {
     await connectToDatabase();
 
-    // Find all registrations for this attendee and populate the event info
     const registrations = await Registration.find({
       attendeeId: session.user.id,
     })
       .populate("eventId")
       .sort({ registeredAt: -1 });
 
-    // Map to simple JSON structure for Client Component
     serializedRegistrations = registrations
       .map((reg) => {
-        const event = reg.eventId as unknown as IEventDocument; // Cast as populated mongoose object
+        const event = reg.eventId as unknown as IEventDocument;
 
         if (!event) return null;
 
