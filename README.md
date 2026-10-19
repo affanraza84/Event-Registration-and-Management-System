@@ -1,67 +1,65 @@
-# EventScout — Live Event Discovery & Registration Platform
+# EventScout — Live Event Discovery & Management Platform
 
-> **SerpApi India Hackathon 2026 Project Submission**  
-> Repository: [https://github.com/affanraza84/Event-Registration-and-Management-System](https://github.com/affanraza84/Event-Registration-and-Management-System)
+A production-grade, full-stack event discovery, RSVP ticketing, and community organizer platform built with **Next.js 16 (App Router & Turbopack)**, **React 19**, **TypeScript**, **MongoDB Atlas**, **SerpApi**, and **Cloudinary**.
 
-EventScout evolves an event registration and RSVP management system into a live event discovery engine. Powered by the official SerpApi Google Search API, EventScout enables tech enthusiasts, student developers, and community organizers across India and globally to scout upcoming hackathons, tech meetups, and conferences in real time, inspect original sources, and convert verified opportunities into platform events with native RSVP capacity management and attendee tracking.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat&logo=vercel)](https://event-registration-and-management-s-seven.vercel.app/)
+[![Automated Tests](https://img.shields.io/badge/Tests-86%20Passing-success?style=flat&logo=node.js)](https://github.com/affanraza84/Event-Registration-and-Management-System)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict%20Mode-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
-
-## 📌 Submission Links & Demonstrations
-
-* **Live Deployed Application**: `https://event-registration-and-management-s-two.vercel.app/discover` *(Replace with your live deployment URL)*
-* **Video Demonstration (< 3 min)**: `https://drive.google.com/file/d/1rn4ueuQL3_ao8au-0jSxbnie5RJ3NnwM/view?usp=sharing` *(Replace with your video URL)*
+* **Live Deployment**: [https://event-registration-and-management-s-seven.vercel.app/](https://event-registration-and-management-s-seven.vercel.app/)
 * **Source Repository**: [https://github.com/affanraza84/Event-Registration-and-Management-System](https://github.com/affanraza84/Event-Registration-and-Management-System)
+* **Author**: Affan Raza
 
 ---
 
-## 💡 Purpose & Target Users
+## 💡 Overview & Problem Statement
 
 ### The Problem
-Finding and managing technology events today is broken:
-1. **Platform Fragmentation**: Organizers post events across disconnected platforms (Devfolio, Unstop, Meetup, Eventbrite, Lu.ma, GDG, MLH, university portals). Users must search multiple directories manually.
-2. **The Verification Trap**: Ordinary web searches return mixed blog posts, expired listings, and unverified dates with no reliable way to confirm attendee capacity or RSVP.
-3. **The Disconnect**: Discovery tools do not provide registration tools, and registration tools lack live discovery.
+Finding, verifying, and managing technology and community gatherings today is fragmented:
+1. **Directory Fragmentation**: Technical gatherings, meetups, and conferences are scattered across dozens of disconnected platforms (Devfolio, Unstop, Meetup, Eventbrite, Lu.ma, LinkedIn, university portals). Users are forced to scour multiple directories manually.
+2. **The Verification & Hallucination Trap**: Typical search engines return stale blog articles, expired listings, or unverified dates with no indication of venue authenticity or attendee capacity.
+3. **The Discovery vs. Registration Divide**: Search platforms offer no host management tools, while traditional ticketing systems lack real-time discovery.
 
 ### The EventScout Solution
-EventScout bridges the gap:
-* **For Attendees & Hackers**: Search live Google Search results via SerpApi tailored for specific cities (e.g. *Ranchi*, *Bengaluru*, *Delhi NCR*), inspect original sources, view evidence-based categories, and register for official platform events.
-* **For Community Hosts**: Scout external gatherings, convert discovered opportunities into editable unverified drafts, verify dates and venue details, set attendee capacity, and manage registrations with real-time analytics and CSV exports.
+EventScout bridges this divide by integrating real-time web search with native platform event hosting:
+* **For Attendees**: Scout live Google Search results in real time powered by the official **SerpApi Google Search API**, inspect original external sources, view evidence-based categories, and register for platform events with real-time atomic capacity management.
+* **For Community Hosts**: Transform external search discoveries into verified event drafts with source attribution, upload high-resolution poster artwork via **Cloudinary**, set attendee capacities and RSVP deadlines, track registrations in a real-time host workspace, and export clean, formula-injection-safe CSV rosters.
 
 ---
 
-## 🔍 How Live SerpApi Search Powers EventScout
+## 🏛️ System Architecture
 
-EventScout integrates with the official **SerpApi Google Search API** (`https://serpapi.com/search.json`) through a secure, server-side pipeline:
+```mermaid
+graph LR
+    Client["Client Browser (React 19 / Tailwind CSS v4)"]
+    NextServer["Next.js 16 App Router (Server Actions & Route Handlers)"]
+    SerpApi["SerpApi Google Search API (search.json)"]
+    Cloudinary["Cloudinary CDN (Asset Transformation & Storage)"]
+    Mongo["MongoDB Atlas (Events, Users, Registrations, Rate Limits)"]
 
-1. **Intelligent Query Formulation**: Transforms user topics, target cities, and dates into natural search queries (e.g. `upcoming AI meetups and hackathons in Ranchi October 2026`).
-2. **Safe URL Normalization & Deduplication**: Strips tracking artifacts (`utm_*`, `fbclid`, `gclid`, `ref`, etc.) and protocol inconsistencies. Identical event pages appearing in Google rich carousels (`events_results`) and web listings (`organic_results`) are deduplicated.
-3. **Deterministic Relevance Scoring**: Ranks events based on auditable signals:
-   * Title keyword match (`+25`) & description snippet match (`+10`)
-   * Location in title/venue (`+25`) & description mention (`+15`)
-   * Category match (`+20`)
-   * Verified event date present (`+15`)
-   * Recognized event domain bonus (`+10`)
-4. **Evidence-Based Categorization**: Assigns one of four categories *only* when explicit keyword evidence exists, falling back strictly to `"Unclassified"`:
-   * `Hackathons and competitions`
-   * `Meetups and networking`
-   * `Conferences and workshops`
-   * `Student and campus events`
-5. **Zero-Hallucination Policy**:
-   * If a date is not confirmed in search metadata, displays **"Date not confirmed"** with an amber indicator.
-   * If venue is not confirmed, displays **"Location unverified"**.
-   * Preserves the original source URL on every card with direct external navigation.
+    Client -->|Live Event Discovery| NextServer
+    NextServer -->|IP Rate Limiter (20 req/min)| Mongo
+    NextServer -->|Server-Side Request with API Key| SerpApi
+    SerpApi -->|Raw SERP Results| NextServer
+    NextServer -->|Deduplicated, Scored & Ranked Events| Client
+
+    Client -->|Poster Upload / Replacement| NextServer
+    NextServer -->|Magic-Byte Binary Validation| NextServer
+    NextServer -->|Stream Upload / Invalidation| Cloudinary
+
+    Client -->|Draft Ingestion / RSVP Booking| NextServer
+    NextServer -->|Atomic Transaction / Query| Mongo
+```
 
 ---
 
-## 🔄 How Discovery Connects to Platform Registration
-
-EventScout connects external discovery to the platform's host drafting and RSVP workflow:
+## 🔄 End-to-End Workflow: Discovery to Registration
 
 ```mermaid
 flowchart TD
     subgraph Discovery ["1. Live Event Discovery (/discover)"]
-        A["User searches: 'AI meetups in Ranchi'"] --> B["SerpApi Google Search API"]
+        A["User searches: 'AI meetups in Bengaluru'"] --> B["SerpApi Google Search API"]
         B --> C["Normalize, Deduplicate & Rank Results"]
         C --> D["Display Event Cards with Verification Badges"]
     end
@@ -74,113 +72,99 @@ flowchart TD
         H --> I["Draft Preparation Modal Preview"]
     end
 
-    subgraph HostReview ["3. Host Review & Verification (/events/new)"]
+    subgraph HostStudio ["3. Host Review & Poster Studio (/events/new)"]
         I -->|Authenticated Host| J["CreateEventForm (Pre-filled Draft)"]
         J --> K["Amber Banner: Unverified Imported Draft"]
-        K --> L["Host enters missing date, venue, capacity & deadline"]
-        L --> M["Mandatory Host Verification Confirmation Checkbox"]
-        M --> N["Submit: Create & Publish Event"]
+        K --> L["Host verifies date via Custom DatePicker & venue"]
+        L --> M["Host uploads optimized poster via Cloudinary"]
+        M --> N["Mandatory Host Verification Confirmation Checkbox"]
+        N --> O["Submit: Create & Publish Event"]
     end
 
     subgraph Registration ["4. Native Platform RSVP (/events/:slug)"]
-        N --> O["Published Platform Event with sourceUrl Attribution"]
-        O --> P["Attendee RSVP Ticket Form"]
-        P --> Q["Atomic Capacity Check & Compound Unique Index"]
-        Q --> R["Host Dashboard: Attendee Table & Formula-Safe CSV Export"]
-        Q --> S["Attendee Dashboard: View Tickets & Cancel RSVP"]
+        O --> P["Published Event with sourceUrl Attribution"]
+        P --> Q["Attendee RSVP Ticket Form (Guest 1-Step or Logged-in)"]
+        Q --> R["Atomic Capacity Check & Compound Unique Index"]
+        R --> S["Host Dashboard: Attendee Table & Formula-Safe CSV Export"]
+        R --> T["Attendee Dashboard: View Tickets & Cancel RSVP"]
     end
 ```
 
-1. **Review**: The user inspects the external search result and verifies facts on the original source website.
-2. **Eligibility Guard**: The system evaluates if the result has sufficient data (`evaluateDraftEligibility`). Incomplete or malformed entries are disabled.
-3. **Draft Preparation**: Clicking **"Use Details to Create Event"** displays an informative modal highlighting unverified fields and routes to `/events/new`.
-4. **Host Authorization**: Only registered hosts can review and publish drafts. Unauthenticated users are redirected to login with preserved callback state.
-5. **Unverified Draft Review**: The host reviews pre-filled title, description, and source link, manually fills missing dates/venues/capacities, checks the verification confirmation, and submits.
-6. **Native RSVP Registration**: Once published in MongoDB, attendees can RSVP with real-time capacity checks (`attendeeCount < capacity`), duplicate RSVP prevention, and cancellation slot releases.
-
 ---
 
-## 🏛️ System Architecture
+## ⚡ Key Features
 
-```mermaid
-graph LR
-    Client["Client Browser (React 19 / Tailwind CSS v4)"]
-    NextServer["Next.js 16 App Router (Server Actions & Route Handlers)"]
-    SerpApi["SerpApi Google Search API (search.json)"]
-    Mongo["MongoDB Atlas (Events, Attendees, Hosts, Registrations, Rate Limits)"]
+### 1. Live Web Discovery Engine (`/discover`)
+* **Real-Time SerpApi Pipeline**: Formulates natural search queries tailored to topics, Indian tech hubs (*Ranchi*, *Bengaluru*, *Delhi NCR*, *Mumbai*, *Hyderabad*, *Pune*, *Kolkata*), and dates.
+* **Safe URL Normalization & Deduplication**: Strips tracking artifacts (`utm_*`, `fbclid`, `gclid`, `ref`, trailing slashes) and deduplicates events appearing across Google carousels and organic search listings.
+* **Deterministic Relevance Scoring**: Transparent, auditable scoring on every card based on title matches, location alignment, category relevance, confirmed dates, and recognized event domain signals.
+* **Evidence-Based Categorization**: Assigns categories strictly when explicit keyword proof exists (`Hackathons and competitions`, `Meetups and networking`, `Conferences and workshops`, `Student and campus events`), falling back to `"Unclassified"`.
+* **Zero-Hallucination Policy**: If a date or venue is unconfirmed in search metadata, displays amber warning badges (`Date not confirmed`, `Location unverified`) and preserves the original source link.
 
-    Client -->|Search Query| NextServer
-    NextServer -->|Check Rate Limit (20 req/min)| Mongo
-    NextServer -->|Server-Side Request with SERPAPI_API_KEY| SerpApi
-    SerpApi -->|Raw Google Search JSON| NextServer
-    NextServer -->|Normalized, Deduplicated & Ranked Events| Client
+### 2. Cloudinary Asset & Poster Pipeline
+* **Dedicated Server Route (`/api/upload`)**: Securely handles event cover art and organizer profile pictures.
+* **Magic-Byte Binary Inspection**: Validates binary headers (JPEG `FF D8 FF`, PNG `89 50 4E 47`, WebP `52 49 46 46`, GIF `47 49 46 38`) to block disguised executable files and spoofed extensions.
+* **Automated Transformations**: Generates fast WebP/AVIF formats (`f_auto`), optimal quality compression (`q_auto`), and retina displays (`dpr_auto`).
+* **Asset Lifecycle Management**: Automatically destroys previous Cloudinary assets when hosts replace or remove posters to prevent orphaned cloud storage.
 
-    Client -->|Submit Draft / Register RSVP| NextServer
-    NextServer -->|Atomic Transaction / Query| Mongo
-```
+### 3. Custom Editorial DatePicker (`DatePicker.tsx`)
+* **Warm Ivory Aesthetic**: Custom popover designed in Warm Ivory (`#FAF9F6`), Deep Ink (`#171923`), and Refined Indigo (`#5146E5`).
+* **Compact Proportions (~240px)**: Engineered to be ~40% more compact than bulky default calendars, preventing viewport overflow and mobile scrolling issues.
+* **Month/Year Fast Switcher**: Quick-jump month grid and year stepper allowing effortless long-range date navigation without repetitive clicking.
+* **Instant Selection UX**: Single-tap date selection updates form state and closes the popover immediately.
+* **Date Constraints**: Enforces future event dates and locks RSVP deadlines to dates on or before the event date (`maxDate`).
 
----
+### 4. Smart Time Parsing & Calendar Validation
+* **Natural Time Parser (`parseStartTime`)**: Decouples date selection from empty time fields and seamlessly handles 12-hour intervals (`"10:00 AM - 4:00 PM"`), single times (`"6:30 PM"`), and 24-hour formats (`"14:30"`).
+* **Timezone-Immune Calendar Evaluation**: Compares dates using local tuple representations `[year, month, day]`, preventing UTC midnight off-by-one errors.
 
-## ⚡ Main Features
+### 5. Attendee RSVP & Concurrency Protection
+* **Guest One-Step Registration**: Unauthenticated guests can register for an event, create an account, and log in simultaneously with a single form submission.
+* **Double-RSVP Prevention**: Guaranteed at the database layer through a compound unique index:
+  ```ts
+  registrationSchema.index({ eventId: 1, attendeeId: 1 }, { unique: true });
+  ```
+* **Atomic Capacity Allocation**: Prevents race conditions and overbooking using atomic MongoDB operators:
+  ```ts
+  const updatedEvent = await Event.findOneAndUpdate(
+    { _id: eventId, isClosed: false, $expr: { $lt: ["$attendeeCount", "$capacity"] } },
+    { $inc: { attendeeCount: 1 } },
+    { new: true }
+  );
+  ```
+* **Cancellation & Slot Release**: Attendees can cancel RSVPs in `/my-events`, atomically releasing capacity back to the event.
 
-### 1. Live Web Discovery (`/discover`)
-* Real-time search by keyword topic, city/location, category, and date.
-* Quick-pick buttons for Indian tech hubs (*Ranchi*, *Bengaluru*, *Delhi NCR*, *Mumbai*, *Hyderabad*, *Pune*, *Kolkata*).
-* Suggested search queries for instant discovery.
-* Multi-state UI: Loading skeleton with spinner, empty results, network errors, validation errors, and active result counts.
-* Client-side category filtering with live count badges.
-
-### 2. Event Intelligence & Ranking
-* Normalized URL deduplication across Google Carousel and organic search results.
-* Transparent relevance signals on every card (e.g. `Keyword match in title • Location matched: Ranchi`).
-* Verified date indicator vs `Date not confirmed` clock badge.
-* Preserved original source URL link on every result card.
-
-### 3. Host Event Management (`/events/new`, `/dashboard`)
-* Draft preparation from external discovery results with source attribution (`sourceUrl`).
-* Slug generator with automatic collision resolution (`byamn-meetup-2026-1`).
-* Unverified imported draft banner and host verification confirmation checkbox.
-* Date constraints: Event dates and registration deadlines must be in the future, with deadline $\le$ event date.
-* Host dashboard powered by TanStack Table with search, event filters, attendee counts, and capacity progress bars.
-* CSV export with spreadsheet formula injection protection.
-
-### 4. Attendee RSVP & Management (`/events/:slug`, `/my-events`)
-* One-step RSVP: Guest attendees can provide name, email, and password to create an account, log in, and register simultaneously.
-* Double-RSVP prevention via compound database index `{ eventId, attendeeId }`.
-* Atomic capacity allocation with automatic closure when full.
-* Attendee dashboard to view tickets and cancel RSVPs to release capacity.
-
----
-
-## ⚠️ Known Limitations
-
-1. **SerpApi Quota Dependency**: Live web discovery relies on SerpApi account query credits. When exhausted, the endpoint returns a clear 429 error without crashing.
-2. **Third-Party Data Accuracy**: External event organizers may alter dates or venues on third-party sites. EventScout therefore mandates host review before publication and labels unconfirmed fields clearly.
-3. **No Direct Web Scraping**: In strict compliance with security best practices, EventScout does not bypass access controls or scrape private external pages beyond official SerpApi Google Search API results.
+### 6. Host Intelligence Workspace (`/dashboard`)
+* **Interactive Table**: Powered by **TanStack Table v8** with multi-column sorting, pagination, and real-time search across attendee names, emails, and ticket IDs.
+* **Capacity Indicators**: Visual progress bars and event status toggles (`Open` / `Closed`).
+* **Formula-Injection-Safe CSV Export**: Protects host spreadsheets against formula injection attacks by prepending `'` and escaping quotes on fields starting with `=`, `+`, `-`, or `@`.
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technologies |
-|---|---|
-| **Framework** | Next.js 16.2.7 (App Router, Turbopack, Server Actions) |
-| **Frontend** | React 19.2.4, Tailwind CSS v4, Lucide React, TanStack Table v8 |
-| **Discovery Service** | Official SerpApi Google Search API (`engine=google`) |
-| **Database & ORM** | MongoDB Atlas, Mongoose 9.6.3 |
-| **Authentication** | NextAuth.js 4.24, bcrypt (cost factor 12) |
-| **Validation** | Zod 4.4, React Hook Form, `@hookform/resolvers` |
-| **Testing** | Node.js Test Runner (`tsx --test`) |
-| **Language** | TypeScript 5 (Strict Mode), ESLint 9 |
+| Layer | Technologies | Purpose |
+|---|---|---|
+| **Framework** | Next.js 16.2.7 (Turbopack, App Router, Server Actions) | Core web application architecture |
+| **Frontend** | React 19.2.4, Tailwind CSS v4, Lucide React | High-performance interactive UI |
+| **Data Tables** | TanStack Table v8 (`@tanstack/react-table`) | Attendee management and filtering |
+| **Discovery Service** | SerpApi Google Search API (`engine=google`) | Real-time web event intelligence |
+| **Media Delivery** | Cloudinary API & SDK (`v2`) | Secure image upload, optimization, and CDN |
+| **Database & ORM** | MongoDB Atlas, Mongoose 9.6.3 | Document database with atomic operations |
+| **Authentication** | NextAuth.js 4.24, bcrypt (12 rounds) | Secure session management & credential auth |
+| **Validation** | Zod 4.4, React Hook Form, `@hookform/resolvers` | Runtime schema validation |
+| **Testing** | Node.js Test Runner (`tsx --test`) | Fast unit and integration tests |
+| **Language & Tooling** | TypeScript 5 (Strict Mode), ESLint 9 | End-to-end type safety and code quality |
 
 ---
 
-## 📦 Local Setup & Installation
+## 📦 Getting Started & Local Setup
 
 ### 1. Prerequisites
 * [Node.js](https://nodejs.org) (v18.17+ or v20+)
-* [MongoDB](https://www.mongodb.com/try/download/community) (Local instance or MongoDB Atlas connection string)
+* [MongoDB](https://www.mongodb.com/try/download/community) (Local instance or MongoDB Atlas cluster)
 * [SerpApi Account & API Key](https://serpapi.com)
+* [Cloudinary Account](https://cloudinary.com)
 
 ### 2. Clone the Repository
 ```bash
@@ -199,7 +183,7 @@ Copy the template to `.env.local`:
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your configuration:
+Populate the required environment variables:
 ```env
 # MongoDB Connection String
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/eventscout?retryWrites=true&w=majority
@@ -210,35 +194,42 @@ NEXTAUTH_URL=http://localhost:3000
 
 # SerpApi Key (Server-Side Only - NEVER prefix with NEXT_PUBLIC)
 SERPAPI_API_KEY=your_private_serpapi_api_key_here
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+CLOUDINARY_FOLDER=eventscout/events
+MAX_IMAGE_FILE_SIZE_BYTES=5242880
 ```
 
-### 5. How to Obtain a SerpApi API Key
-1. Visit [serpapi.com](https://serpapi.com) and create a free account.
-2. Navigate to your **Dashboard** -> **API Key**.
-3. Copy your private 64-character hex key.
-4. Paste it into `.env.local` as `SERPAPI_API_KEY`.
-
-### 6. Run the Application
+### 5. Run the Application
 ```bash
-# Start development server
+# Start development server with Turbopack
 npm run dev
 
-# Open application in browser
+# Open application in your browser
 open http://localhost:3000
 ```
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🧪 Testing & Verification
 
-EventScout includes unit and integration tests executed using the Node.js test runner:
+EventScout includes comprehensive automated unit and integration tests executed using the Node.js native test runner:
 
 ```bash
 # Run automated test suite
 npm test
 ```
-* **Test Suites**: 23 suites, **68 tests passing**, 0 failing.
-* **Coverage**: URL normalization, tracking stripping, duplicate removal, relevance scoring, evidence-based categorization, draft eligibility, date extraction, schema validation, rate-limiting, and CSV formula sanitization.
+* **Test Suite Status**: **86 tests passing**, 29 suites, 0 failures.
+* **Test Coverage**:
+  * URL normalization, tracking stripping, and protocol sanitization.
+  * Deterministic relevance scoring and evidence-based categorization.
+  * External search draft eligibility and date extraction.
+  * Cloudinary upload magic-byte verification and payload schemas.
+  * Future date validation and 12-hour/24-hour time parsing.
+  * Concurrency, double-RSVP prevention, and CSV injection sanitization.
 
 ```bash
 # Run linter
@@ -248,20 +239,21 @@ npm run lint
 npm run build
 ```
 * **Linting**: 0 errors.
-* **Build**: Successfully compiles with Turbopack, full TypeScript type safety, and static page generation across all 11 application routes.
+* **Production Build**: Successfully compiles with Turbopack, full TypeScript type safety, and static page generation across all routes.
 
 ---
 
-## 🔒 Security & Reliability Considerations
+## 🔒 Security & Defense-in-Depth
 
-* **API Key Exclusivity**: `SERPAPI_API_KEY` is strictly confined to server-side execution. It is never exposed in client bundles, responses, logs, or `NEXT_PUBLIC` variables.
-* **Distributed Rate Limiting**: `/api/discover` enforces 20 requests per minute per IP using a MongoDB TTL collection (`RateLimit`), with automatic in-memory fallback.
-* **Safe External Linking**: All outgoing external links enforce `target="_blank"` and `rel="noopener noreferrer"` to prevent reverse tab-nabbing.
-* **Protocol Whitelisting**: `sourceUrl` validation strictly permits `http://` and `https://` schemes, rejecting `javascript:` or `data:` URLs.
-* **CSV Injection Defense**: CSV exports neutralize formula execution triggers (`=`, `+`, `-`, `@`) by prepending `'` and escaping quotes.
-* **Atomic Capacity Enforcement**: Conditional database updates (`attendeeCount < capacity`) prevent race conditions and overbooking.
+* **Private Key Isolation**: `SERPAPI_API_KEY` and `CLOUDINARY_API_SECRET` are strictly kept server-side. No sensitive API credentials are ever exposed in client bundles or public environment variables.
+* **Distributed Rate Limiting**: `/api/discover` enforces a rate limit of 20 requests per minute per IP using a MongoDB TTL collection (`RateLimit`), with automatic in-memory fallback.
+* **MIME & Magic-Byte File Inspection**: Uploaded image buffers are validated against binary file signatures before streaming to Cloudinary to prevent executable file uploads.
+* **Safe External Linking**: All outgoing links generated from discovery search results enforce `target="_blank"` and `rel="noopener noreferrer"`.
+* **Protocol Whitelisting**: `sourceUrl` inputs strictly permit `http://` and `https://` protocols, eliminating `javascript:` and `data:` XSS vectors.
+* **CSV Injection Defense**: Spreadsheet export fields starting with `=`, `+`, `-`, or `@` are sanitized to prevent formula execution in Excel or Google Sheets.
+* **Atomic Capacity Enforcement**: Conditional database updates (`attendeeCount < capacity`) prevent race conditions and overbooking under high traffic.
 
 ---
 
 ## 📄 License
-This project is open-source under the MIT License.
+This project is open-source under the [MIT License](LICENSE).

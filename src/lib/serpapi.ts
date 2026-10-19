@@ -312,7 +312,7 @@ export async function searchLiveEvents(
   // 2. Build the optimized Google Search query
   const query = buildDiscoveryQuery(input);
   const effectiveLimit = Math.min(Math.max(input.limit || 10, 1), MAX_RESULTS_LIMIT);
-  const country = input.country || "in"; // Default to India for SerpApi India Hackathon 2026
+  const country = input.country || "in"; // Default to regional locale (India)
 
   // 3. Assemble request parameters for official endpoint: https://serpapi.com/search.json
   const params = new URLSearchParams({

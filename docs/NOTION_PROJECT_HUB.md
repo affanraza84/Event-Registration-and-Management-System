@@ -11,7 +11,7 @@
 
 ### 1.1 The Core Problem
 Community event organizers and developers face a fractured ecosystem:
-1. **Directory Fragmentation**: Technical gatherings, hackathons, and conferences are scattered across dozens of unlinked platforms (Devfolio, Unstop, Meetup, Eventbrite, Lu.ma, MLH, LinkedIn, university portals). Users are forced to check multiple directories manually.
+1. **Directory Fragmentation**: Technical gatherings, developer meetups, and conferences are scattered across dozens of unlinked platforms (Devfolio, Unstop, Meetup, Eventbrite, Lu.ma, LinkedIn, university portals). Users are forced to check multiple directories manually.
 2. **The Verification & Hallucination Trap**: Standard web searches return expired listings, scraper spam, and unconfirmed dates. Typical AI search engines invent (hallucinate) event details.
 3. **The Discovery vs. Management Disconnect**: Platforms that offer search do not offer host registration tools; platforms that offer registration tools do not provide live discovery.
 
