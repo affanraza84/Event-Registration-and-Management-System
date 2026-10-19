@@ -1,19 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Calendar,
   Clock,
   MapPin,
   Users,
   Sparkles,
   Loader2,
   ArrowLeft,
-  CalendarCheck,
   AlertTriangle,
   ExternalLink,
   ShieldCheck,
@@ -23,6 +21,7 @@ import { eventCreationSchema, EventCreationInput } from "@/validations/event";
 import { createEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
 import ImageUpload from "@/components/ImageUpload";
+import DatePicker from "@/components/DatePicker";
 
 interface CreateEventFormProps {
   initialDraft?: {
@@ -51,6 +50,8 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
     register,
     handleSubmit,
     setValue,
+    control,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(eventCreationSchema),
@@ -260,19 +261,26 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
                 <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
                   Event Date
                 </label>
-                <div className="relative">
-                  <Calendar className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="date"
-                    disabled={isLoading}
-                    {...register("date")}
-                    className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white transition-all ${
-                      errors.date
-                        ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
-                        : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
-                    }`}
-                  />
-                </div>
+                <Controller
+                  name="date"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value}
+                      onChange={(val) => {
+                        field.onChange(val);
+                        const currentDeadline = watch("registrationDeadline");
+                        if (currentDeadline && currentDeadline > val) {
+                          setValue("registrationDeadline", val, { shouldValidate: true });
+                        }
+                      }}
+                      onBlur={field.onBlur}
+                      hasError={!!errors.date}
+                      disabled={isLoading}
+                      placeholder="Select event date..."
+                    />
+                  )}
+                />
                 {errors.date && (
                   <p className="text-[#DC2626] text-xs mt-1">{errors.date.message}</p>
                 )}
@@ -371,19 +379,21 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
                   Must be on or before the event date
                 </span>
               </div>
-              <div className="relative">
-                <CalendarCheck className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="date"
-                  disabled={isLoading}
-                  {...register("registrationDeadline")}
-                  className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white transition-all ${
-                    errors.registrationDeadline
-                      ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
-                      : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
-                  }`}
-                />
-              </div>
+              <Controller
+                name="registrationDeadline"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={(val) => field.onChange(val)}
+                    onBlur={field.onBlur}
+                    maxDate={watch("date") || undefined}
+                    hasError={!!errors.registrationDeadline}
+                    disabled={isLoading}
+                    placeholder="Select registration deadline..."
+                  />
+                )}
+              />
               {errors.registrationDeadline && (
                 <p className="text-[#DC2626] text-xs mt-1">
                   {errors.registrationDeadline.message}

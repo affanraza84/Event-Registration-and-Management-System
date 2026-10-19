@@ -33,6 +33,7 @@ import {
 import { closeEventAction, deleteEventAction, updateEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
 import ImageUpload from "@/components/ImageUpload";
+import DatePicker from "@/components/DatePicker";
 import { getEventCover } from "@/lib/eventCovers";
 
 interface EventItem {
@@ -632,21 +633,11 @@ export default function DashboardClient({
 
             {/* Date Picker Filter */}
             <div className="relative">
-              <Calendar className="w-4 h-4 text-[#686D78] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="date"
+              <DatePicker
                 value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#FAF9F6] border border-[#E8E5DF] focus:border-[#5146E5] focus:bg-white text-sm text-[#171923] rounded-xl focus:outline-none transition-all cursor-pointer"
+                onChange={(val) => setFilterDate(val)}
+                placeholder="Filter by date..."
               />
-              {filterDate && (
-                <button
-                  onClick={() => setFilterDate("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#686D78] hover:text-[#171923] cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           </div>
 
@@ -820,14 +811,12 @@ export default function DashboardClient({
                   <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
                     Date
                   </label>
-                  <input
-                    type="date"
-                    required
+                  <DatePicker
                     value={editForm.date}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, date: e.target.value }))
+                    onChange={(val) =>
+                      setEditForm((prev) => ({ ...prev, date: val }))
                     }
-                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                    placeholder="Select event date..."
                   />
                 </div>
                 <div className="space-y-1">
@@ -885,17 +874,16 @@ export default function DashboardClient({
                   <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
                     RSVP Deadline
                   </label>
-                  <input
-                    type="date"
-                    required
+                  <DatePicker
                     value={editForm.registrationDeadline}
-                    onChange={(e) =>
+                    onChange={(val) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        registrationDeadline: e.target.value,
+                        registrationDeadline: val,
                       }))
                     }
-                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white focus:border-[#5146E5]"
+                    maxDate={editForm.date || undefined}
+                    placeholder="Select deadline..."
                   />
                 </div>
               </div>
