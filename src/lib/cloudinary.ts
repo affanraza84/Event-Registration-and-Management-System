@@ -147,14 +147,33 @@ export async function uploadImageBuffer(
         tags: options.tags,
         resource_type: "image",
         overwrite: true,
-        // Cloudinary automatic format and quality optimizations
-        format: undefined,
+        // Optional upload preset if configured
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET || undefined,
       },
       (error, result?: UploadApiResponse) => {
         if (error || !result) {
+          const rawMsg = error?.message || "";
+          const httpCode = (error as { http_code?: number })?.http_code;
+
+          if (httpCode === 403 || rawMsg.includes("403")) {
+            return reject(
+              new Error(
+                "Cloudinary Permission Error (403): Your Cloudinary API Key lacks 'create' permissions. In Cloudinary Console -> Settings -> Access Keys, enable the 'create' permission (or use a key with Full Access)."
+              )
+            );
+          }
+
+          if (httpCode === 401 || rawMsg.includes("401")) {
+            return reject(
+              new Error(
+                "Cloudinary Authentication Error (401): Invalid Cloudinary credentials. Please verify CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."
+              )
+            );
+          }
+
           return reject(
             new Error(
-              error?.message || "Failed to upload image buffer to Cloudinary"
+              rawMsg || "Failed to upload image buffer to Cloudinary"
             )
           );
         }
