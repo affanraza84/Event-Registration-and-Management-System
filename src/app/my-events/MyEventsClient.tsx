@@ -172,6 +172,7 @@ export default function MyEventsClient({
                   <div>
                     {/* Cover Banner */}
                     <div className="relative aspect-[21/9] w-full overflow-hidden bg-[#FAF9F6]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={cover.url}
                         alt={cover.alt}

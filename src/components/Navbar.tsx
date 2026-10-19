@@ -68,26 +68,32 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-1.5">
               <Link
                 href="/discover"
-                className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-colors ${
+                className={`text-sm font-medium px-3.5 py-2 rounded-xl transition-all ${
                   pathname === "/discover"
-                    ? "bg-[#EEEAFE] text-[#5146E5]"
+                    ? "bg-[#EEEAFE] text-[#5146E5] font-semibold"
                     : "text-[#686D78] hover:text-[#171923] hover:bg-[#F2EFE9]"
                 }`}
               >
                 Discover Events
               </Link>
               <Link
-                href="/"
-                className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-colors ${
+                href="/#featured"
+                className={`text-sm font-medium px-3.5 py-2 rounded-xl transition-all ${
                   pathname === "/"
-                    ? "text-[#171923]"
+                    ? "text-[#171923] hover:bg-[#F2EFE9]"
                     : "text-[#686D78] hover:text-[#171923] hover:bg-[#F2EFE9]"
                 }`}
               >
                 Featured Gatherings
+              </Link>
+              <Link
+                href="/#how-it-works"
+                className="text-sm font-medium px-3.5 py-2 rounded-xl text-[#686D78] hover:text-[#171923] hover:bg-[#F2EFE9] transition-all"
+              >
+                How It Works
               </Link>
             </div>
           </div>
@@ -104,7 +110,7 @@ export default function Navbar() {
               <div className="flex items-center gap-2.5">
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-[#686D78] hover:text-[#171923] px-3.5 py-2 rounded-lg transition-colors"
+                  className="text-sm font-medium text-[#686D78] hover:text-[#171923] px-3.5 py-2 rounded-xl transition-colors"
                 >
                   Sign In
                 </Link>
@@ -115,10 +121,11 @@ export default function Navbar() {
                   Host an Event
                 </Link>
                 <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center text-sm font-medium px-4.5 py-2 bg-[#5146E5] text-white hover:bg-[#4338CA] rounded-xl shadow-xs transition-all duration-150 active:scale-[0.99]"
+                  href="/discover"
+                  className="inline-flex items-center justify-center gap-1.5 text-sm font-medium px-4.5 py-2 bg-[#5146E5] text-white hover:bg-[#4338CA] rounded-xl shadow-xs transition-all duration-150 active:scale-[0.99]"
                 >
-                  Get Started
+                  <Compass className="w-4 h-4" />
+                  <span>Explore</span>
                 </Link>
               </div>
             )}
@@ -264,7 +271,7 @@ export default function Navbar() {
               Discover Events
             </Link>
             <Link
-              href="/"
+              href="/#featured"
               className={`block px-3 py-2 rounded-lg text-sm font-medium ${
                 pathname === "/"
                   ? "bg-[#FAF9F6] text-[#171923]"
@@ -272,6 +279,12 @@ export default function Navbar() {
               }`}
             >
               Featured Gatherings
+            </Link>
+            <Link
+              href="/#how-it-works"
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-[#686D78] hover:bg-[#FAF9F6]"
+            >
+              How It Works
             </Link>
           </div>
 

@@ -46,7 +46,7 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(3px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -54,8 +54,89 @@ body {
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 .animate-fade-in {
-  animation: fadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #F2EFE9 25%, #FAF9F6 50%, #F2EFE9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* Glassmorphism and editorial utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 229, 223, 0.9);
+}
+
+.glass-panel-dark {
+  background: rgba(23, 25, 35, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.editorial-shadow {
+  box-shadow: 0 1px 3px rgba(23, 25, 35, 0.04), 0 8px 24px -4px rgba(23, 25, 35, 0.06);
+}
+
+.editorial-shadow-hover {
+  box-shadow: 0 4px 12px rgba(23, 25, 35, 0.06), 0 16px 36px -4px rgba(81, 70, 229, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -84,3 +165,4 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #B8B3A7;
 }
+

@@ -86,6 +86,7 @@ export default function DashboardClient({
   initialAnalytics,
   initialEvents,
   initialRegistrations,
+  session,
 }: DashboardClientProps) {
   const router = useRouter();
 
@@ -94,6 +95,15 @@ export default function DashboardClient({
   const [registrations, setRegistrations] =
     useState<RegistrationItem[]>(initialRegistrations);
   const [analytics, setAnalytics] = useState(initialAnalytics);
+
+  const totalCapacity = useMemo(() => {
+    return events.reduce((acc, ev) => acc + (ev.capacity || 0), 0);
+  }, [events]);
+
+  const capacityUtilization = useMemo(() => {
+    if (totalCapacity === 0) return 0;
+    return Math.min(100, Math.round((analytics.totalAttendees / totalCapacity) * 100));
+  }, [analytics.totalAttendees, totalCapacity]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -378,67 +388,87 @@ export default function DashboardClient({
       <main className="flex-1 p-6 sm:p-10 max-w-7xl mx-auto w-full space-y-10 animate-fade-in">
         {/* Top Title & CTA */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#E8E5DF]">
-          <div>
-            <span className="text-xs font-semibold text-[#5146E5] uppercase tracking-wider">
-              Host Operations
-            </span>
-            <h1 className="text-3xl font-bold tracking-tight text-[#171923] mt-1">
-              Host Workspace & Analytics
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EEEAFE] text-[#5146E5] text-xs font-semibold uppercase tracking-wider">
+              <span>Organizer Administration</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#171923]">
+              Welcome back, {session?.user?.name || "Organizer"}
             </h1>
-            <p className="text-[#686D78] mt-1 text-sm">
-              Monitor active gatherings, attendee volumes, and registrations in real-time.
+            <p className="text-[#686D78] text-sm">
+              Manage your hosted gatherings, monitor capacity utilization, and export attendee rosters.
             </p>
           </div>
           <Link
             href="/events/new"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] text-white text-sm font-medium rounded-xl shadow-xs transition-all active:scale-[0.99] shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] text-white text-sm font-semibold rounded-xl shadow-xs transition-all active:scale-[0.99] shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Create New Event</span>
           </Link>
         </div>
 
-        {/* Compact Metrics Row */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-6 flex items-center justify-between shadow-xs">
+        {/* 4-Card Summary Metrics Row */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-5 flex items-center justify-between shadow-xs">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#686D78] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#686D78] uppercase tracking-wider">
                 Total Events
               </span>
-              <div className="text-3xl font-bold text-[#171923]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#171923]">
                 {analytics.totalEvents}
               </div>
             </div>
             <div className="p-3 bg-[#EEEAFE] rounded-xl text-[#5146E5]">
-              <Calendar className="w-6 h-6" />
+              <Calendar className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-6 flex items-center justify-between shadow-xs">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-5 flex items-center justify-between shadow-xs">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#686D78] uppercase tracking-wider">
-                Total Registrations
+              <span className="text-[11px] font-bold text-[#686D78] uppercase tracking-wider">
+                Total RSVPs
               </span>
-              <div className="text-3xl font-bold text-[#171923]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#171923]">
                 {analytics.totalAttendees}
               </div>
             </div>
             <div className="p-3 bg-[#EEEAFE] rounded-xl text-[#5146E5]">
-              <Users className="w-6 h-6" />
+              <Users className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-6 flex items-center justify-between shadow-xs">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-5 flex items-center justify-between shadow-xs">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#686D78] uppercase tracking-wider">
-                Upcoming Gatherings
+              <span className="text-[11px] font-bold text-[#686D78] uppercase tracking-wider">
+                Upcoming Events
               </span>
-              <div className="text-3xl font-bold text-[#171923]">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#171923]">
                 {analytics.upcomingEvents}
               </div>
             </div>
             <div className="p-3 bg-[#ECFDF5] rounded-xl text-[#059669]">
-              <CalendarCheck className="w-6 h-6" />
+              <CalendarCheck className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-5 flex flex-col justify-between shadow-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-[#686D78] uppercase tracking-wider">
+                Capacity Rate
+              </span>
+              <span className="text-xs font-bold text-[#5146E5]">
+                {capacityUtilization}%
+              </span>
+            </div>
+            <div className="text-xl sm:text-2xl font-extrabold text-[#171923]">
+              {analytics.totalAttendees} / {totalCapacity}
+            </div>
+            <div className="w-full bg-[#FAF9F6] border border-[#E8E5DF] rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-[#5146E5] h-full rounded-full transition-all duration-500"
+                style={{ width: `${capacityUtilization}%` }}
+              />
             </div>
           </div>
         </section>

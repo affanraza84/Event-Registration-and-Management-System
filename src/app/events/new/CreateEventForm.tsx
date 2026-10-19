@@ -188,217 +188,252 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
               </div>
             )}
 
-            {/* Event Cover Poster Upload */}
-            <ImageUpload
-              value={posterUrl}
-              publicId={posterPublicId}
-              onChange={(url, publicId) => {
-                setPosterUrl(url);
-                setPosterPublicId(publicId);
-                setValue("imageUrl", url, { shouldValidate: true });
-                setValue("imagePublicId", publicId, { shouldValidate: true });
-              }}
-              onRemove={() => {
-                setPosterUrl("");
-                setPosterPublicId("");
-                setValue("imageUrl", "", { shouldValidate: true });
-                setValue("imagePublicId", "", { shouldValidate: true });
-              }}
-              onUploadStateChange={setIsUploadingImage}
-              disabled={isLoading}
-            />
+            {/* Section 1: Event Identity */}
+            <div className="space-y-4 p-5 sm:p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="flex items-center gap-2 pb-2 border-b border-[#E8E5DF]">
+                <div className="w-6 h-6 rounded-lg bg-[#5146E5] text-white flex items-center justify-center text-xs font-bold">
+                  1
+                </div>
+                <h3 className="text-sm font-bold text-[#171923] uppercase tracking-wider">
+                  Event Identity & Details
+                </h3>
+              </div>
 
-            {/* Event Title */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                Event Title
-              </label>
-              <div className="relative">
-                <Sparkles className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="e.g. Bengaluru Open Source Summit 2026"
+              {/* Event Cover Poster Upload */}
+              <ImageUpload
+                value={posterUrl}
+                publicId={posterPublicId}
+                onChange={(url, publicId) => {
+                  setPosterUrl(url);
+                  setPosterPublicId(publicId);
+                  setValue("imageUrl", url, { shouldValidate: true });
+                  setValue("imagePublicId", publicId, { shouldValidate: true });
+                }}
+                onRemove={() => {
+                  setPosterUrl("");
+                  setPosterPublicId("");
+                  setValue("imageUrl", "", { shouldValidate: true });
+                  setValue("imagePublicId", "", { shouldValidate: true });
+                }}
+                onUploadStateChange={setIsUploadingImage}
+                disabled={isLoading}
+              />
+
+              {/* Event Title */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                  Event Title
+                </label>
+                <div className="relative">
+                  <Sparkles className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="e.g. Bengaluru Open Source Summit 2026"
+                    disabled={isLoading}
+                    {...register("title")}
+                    className={`w-full pl-10 pr-3.5 py-2.5 bg-white border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none transition-all ${
+                      errors.title
+                        ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                        : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
+                    }`}
+                  />
+                </div>
+                {errors.title && (
+                  <p className="text-[#DC2626] text-xs mt-1">{errors.title.message}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                  Description & Agenda
+                </label>
+                <textarea
+                  placeholder="Describe the topics, speakers, what attendees should bring, and schedule..."
                   disabled={isLoading}
-                  {...register("title")}
-                  className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
-                    errors.title
+                  rows={4}
+                  {...register("description")}
+                  className={`w-full px-4 py-3 bg-white border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none transition-all resize-y ${
+                    errors.description
                       ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
                       : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
                   }`}
                 />
+                {errors.description && (
+                  <p className="text-[#DC2626] text-xs mt-1">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
-              {errors.title && (
-                <p className="text-[#DC2626] text-xs mt-1">{errors.title.message}</p>
-              )}
             </div>
 
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                Description & Agenda
-              </label>
-              <textarea
-                placeholder="Describe the topics, speakers, what attendees should bring, and schedule..."
-                disabled={isLoading}
-                rows={5}
-                {...register("description")}
-                className={`w-full px-4 py-3 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all resize-y ${
-                  errors.description
-                    ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
-                    : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
-                }`}
-              />
-              {errors.description && (
-                <p className="text-[#DC2626] text-xs mt-1">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
+            {/* Section 2: Date & Schedule */}
+            <div className="space-y-4 p-5 sm:p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="flex items-center gap-2 pb-2 border-b border-[#E8E5DF]">
+                <div className="w-6 h-6 rounded-lg bg-[#5146E5] text-white flex items-center justify-center text-xs font-bold">
+                  2
+                </div>
+                <h3 className="text-sm font-bold text-[#171923] uppercase tracking-wider">
+                  Date, Time & RSVP Deadline
+                </h3>
+              </div>
 
-            {/* Date & Time Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Date & Time Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                    Event Date
+                  </label>
+                  <Controller
+                    name="date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={(val) => {
+                          field.onChange(val);
+                          const currentDeadline = watch("registrationDeadline");
+                          if (currentDeadline && currentDeadline > val) {
+                            setValue("registrationDeadline", val, { shouldValidate: true });
+                          }
+                        }}
+                        onBlur={field.onBlur}
+                        hasError={!!errors.date}
+                        disabled={isLoading}
+                        placeholder="Select event date..."
+                      />
+                    )}
+                  />
+                  {errors.date && (
+                    <p className="text-[#DC2626] text-xs mt-1">{errors.date.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                      Event Time
+                    </label>
+                    <span className="text-[10px] text-[#686D78]">e.g. 10:00 AM</span>
+                  </div>
+                  <div className="relative">
+                    <Clock className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="e.g. 10:00 AM - 4:00 PM"
+                      disabled={isLoading}
+                      {...register("time")}
+                      className={`w-full pl-10 pr-3.5 py-2.5 bg-white border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none transition-all ${
+                        errors.time
+                          ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                          : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
+                      }`}
+                    />
+                  </div>
+                  {errors.time && (
+                    <p className="text-[#DC2626] text-xs mt-1">{errors.time.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Registration Deadline */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                  Event Date
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                    Registration Deadline
+                  </label>
+                  <span className="text-[10px] text-[#686D78]">
+                    Must be on or before the event date
+                  </span>
+                </div>
                 <Controller
-                  name="date"
+                  name="registrationDeadline"
                   control={control}
                   render={({ field }) => (
                     <DatePicker
                       value={field.value}
-                      onChange={(val) => {
-                        field.onChange(val);
-                        const currentDeadline = watch("registrationDeadline");
-                        if (currentDeadline && currentDeadline > val) {
-                          setValue("registrationDeadline", val, { shouldValidate: true });
-                        }
-                      }}
+                      onChange={(val) => field.onChange(val)}
                       onBlur={field.onBlur}
-                      hasError={!!errors.date}
+                      maxDate={watch("date") || undefined}
+                      hasError={!!errors.registrationDeadline}
                       disabled={isLoading}
-                      placeholder="Select event date..."
+                      placeholder="Select registration deadline..."
                     />
                   )}
                 />
-                {errors.date && (
-                  <p className="text-[#DC2626] text-xs mt-1">{errors.date.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                    Event Time
-                  </label>
-                  <span className="text-[10px] text-[#686D78]">e.g. 10:00 AM</span>
-                </div>
-                <div className="relative">
-                  <Clock className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="e.g. 10:00 AM - 4:00 PM"
-                    disabled={isLoading}
-                    {...register("time")}
-                    className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
-                      errors.time
-                        ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
-                        : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
-                    }`}
-                  />
-                </div>
-                {errors.time && (
-                  <p className="text-[#DC2626] text-xs mt-1">{errors.time.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Location & Capacity Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                  Location / Venue
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="e.g. Koramangala, Bengaluru or Online"
-                    disabled={isLoading}
-                    {...register("location")}
-                    className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none focus:bg-white transition-all ${
-                      errors.location
-                        ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
-                        : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
-                    }`}
-                  />
-                </div>
-                {errors.location && (
+                {errors.registrationDeadline && (
                   <p className="text-[#DC2626] text-xs mt-1">
-                    {errors.location.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                    Capacity Limit
-                  </label>
-                  <span className="text-[10px] text-[#686D78]">Strict RSVP ceiling</span>
-                </div>
-                <div className="relative">
-                  <Users className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="number"
-                    min="1"
-                    disabled={isLoading}
-                    {...register("capacity")}
-                    className={`w-full pl-10 pr-3.5 py-2.5 bg-[#FAF9F6] border rounded-xl text-sm text-[#171923] focus:outline-none focus:bg-white transition-all ${
-                      errors.capacity
-                        ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
-                        : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
-                    }`}
-                  />
-                </div>
-                {errors.capacity && (
-                  <p className="text-[#DC2626] text-xs mt-1">
-                    {errors.capacity.message}
+                    {errors.registrationDeadline.message}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Registration Deadline */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[#171923] uppercase tracking-wider">
-                  Registration Deadline
-                </label>
-                <span className="text-[10px] text-[#686D78]">
-                  Must be on or before the event date
-                </span>
+            {/* Section 3: Venue & Capacity */}
+            <div className="space-y-4 p-5 sm:p-6 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF]">
+              <div className="flex items-center gap-2 pb-2 border-b border-[#E8E5DF]">
+                <div className="w-6 h-6 rounded-lg bg-[#5146E5] text-white flex items-center justify-center text-xs font-bold">
+                  3
+                </div>
+                <h3 className="text-sm font-bold text-[#171923] uppercase tracking-wider">
+                  Venue & Capacity Enforcement
+                </h3>
               </div>
-              <Controller
-                name="registrationDeadline"
-                control={control}
-                render={({ field }) => (
-                  <DatePicker
-                    value={field.value}
-                    onChange={(val) => field.onChange(val)}
-                    onBlur={field.onBlur}
-                    maxDate={watch("date") || undefined}
-                    hasError={!!errors.registrationDeadline}
-                    disabled={isLoading}
-                    placeholder="Select registration deadline..."
-                  />
-                )}
-              />
-              {errors.registrationDeadline && (
-                <p className="text-[#DC2626] text-xs mt-1">
-                  {errors.registrationDeadline.message}
-                </p>
-              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                    Location / Venue
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Koramangala, Bengaluru or Online"
+                      disabled={isLoading}
+                      {...register("location")}
+                      className={`w-full pl-10 pr-3.5 py-2.5 bg-white border rounded-xl text-sm text-[#171923] placeholder-[#9CA3AF] focus:outline-none transition-all ${
+                        errors.location
+                          ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                          : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
+                      }`}
+                    />
+                  </div>
+                  {errors.location && (
+                    <p className="text-[#DC2626] text-xs mt-1">
+                      {errors.location.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#171923] uppercase tracking-wider">
+                      Attendee Capacity
+                    </label>
+                    <span className="text-[10px] text-[#686D78]">Strict ceiling</span>
+                  </div>
+                  <div className="relative">
+                    <Users className="w-4 h-4 text-[#686D78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="number"
+                      min="1"
+                      disabled={isLoading}
+                      {...register("capacity")}
+                      className={`w-full pl-10 pr-3.5 py-2.5 bg-white border rounded-xl text-sm text-[#171923] focus:outline-none transition-all ${
+                        errors.capacity
+                          ? "border-[#FECACA] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/10"
+                          : "border-[#E8E5DF] focus:border-[#5146E5] focus:ring-2 focus:ring-[#5146E5]/15"
+                      }`}
+                    />
+                  </div>
+                  {errors.capacity && (
+                    <p className="text-[#DC2626] text-xs mt-1">
+                      {errors.capacity.message}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Hidden Source Attribution URL */}
@@ -406,7 +441,7 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
 
             {/* Host Verification Checkbox for Imported Drafts */}
             {isImportedDraft && (
-              <div className="p-4 bg-[#FAF9F6] border border-[#E8E5DF] rounded-xl space-y-2">
+              <div className="p-4 bg-[#FFFBEB] border border-[#FDE68A] rounded-xl space-y-2">
                 <label className="flex items-start gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -414,7 +449,7 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
                     onChange={(e) => setConfirmedByHost(e.target.checked)}
                     className="mt-1 w-4 h-4 text-[#5146E5] rounded border-[#E8E5DF] focus:ring-[#5146E5] cursor-pointer"
                   />
-                  <span className="text-xs text-[#686D78] leading-relaxed">
+                  <span className="text-xs text-[#92400E] leading-relaxed">
                     <strong className="text-[#171923] block">
                       Host Verification Confirmation
                     </strong>
