@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useId, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Search,
   MapPin,
@@ -653,21 +654,32 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         {status === "error" && (
           <div
             role="alert"
-            className="p-8 sm:p-10 text-center space-y-4 bg-[#FEF2F2] border border-[#FECACA] rounded-2xl max-w-2xl mx-auto shadow-xs"
+            className="p-8 sm:p-10 text-center space-y-5 bg-[#FEF2F2] border border-[#FECACA] rounded-2xl max-w-2xl mx-auto shadow-xs"
           >
             <div className="inline-flex p-3 bg-[#FEE2E2] rounded-full text-[#DC2626]">
               <AlertCircle className="w-7 h-7" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <h3 className="text-lg font-bold text-[#DC2626]">
                 Search Discovery Notice
               </h3>
-              <p className="text-sm text-[#171923] leading-relaxed">
+              <p className="text-sm text-[#171923] leading-relaxed max-w-lg mx-auto">
                 {errorMessage ||
                   "An error occurred while fetching live events. Please check your query or try again."}
               </p>
+              {errorMessage?.includes("not currently configured") && (
+                <div className="mt-3 p-3.5 bg-white/90 border border-[#FECACA] rounded-xl text-xs text-[#991B1B] text-left space-y-1.5 shadow-2xs">
+                  <p className="font-semibold text-[#7F1D1D] flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
+                    <span>Production Setup Required:</span>
+                  </p>
+                  <p className="text-[#686D78]">
+                    Add <code className="bg-[#FEE2E2] px-1.5 py-0.5 rounded text-[#991B1B] font-mono text-[11px]">SERPAPI_API_KEY</code> to your deployment environment variables (e.g. Vercel Dashboard &gt; <strong>Project Settings &gt; Environment Variables</strong>) and redeploy.
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="pt-2">
+            <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
               <button
                 type="button"
                 onClick={() =>
@@ -678,6 +690,12 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
                 <RotateCcw className="w-4 h-4" />
                 Retry Search
               </button>
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] text-[#171923] rounded-xl text-sm font-medium transition-all shadow-xs"
+              >
+                Browse Hosted Events
+              </Link>
             </div>
           </div>
         )}
