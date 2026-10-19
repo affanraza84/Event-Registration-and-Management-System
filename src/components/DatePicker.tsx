@@ -22,7 +22,6 @@ export interface DatePickerProps {
   name?: string;
   className?: string;
   allowClear?: boolean;
-  showPresets?: boolean;
 }
 
 const MONTH_NAMES = [
@@ -97,12 +96,10 @@ export default function DatePicker({
   name,
   className = "",
   allowClear = true,
-  showPresets = true,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"days" | "months">("days");
 
-  // Determine initial calendar focus view
   const parsedValue = useMemo(() => parseDate(value), [value]);
   const parsedMin = useMemo(() => parseDate(minDate), [minDate]);
 
@@ -131,7 +128,7 @@ export default function DatePicker({
   const [prevValue, setPrevValue] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync calendar focus with value when value changes externally (React recommended pattern)
+  // Sync calendar focus with value when value changes externally
   if (value !== prevValue) {
     setPrevValue(value);
     if (parsedValue) {
@@ -201,7 +198,7 @@ export default function DatePicker({
     [minDate, maxDate]
   );
 
-  // Generate calendar days grid
+  // Generate calendar days grid (only rows needed)
   const calendarDays = useMemo(() => {
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun
@@ -251,28 +248,31 @@ export default function DatePicker({
       });
     }
 
-    // 3. Next month padding to fill multiple of 7 (up to 35 or 42 cells)
-    const remaining = (7 - (days.length % 7)) % 7;
-    for (let d = 1; d <= remaining; d++) {
-      const m = currentMonth === 11 ? 0 : currentMonth + 1;
-      const y = currentMonth === 11 ? currentYear + 1 : currentYear;
-      const iso = formatDateISO(y, m, d);
-      days.push({
-        day: d,
-        month: m,
-        year: y,
-        isCurrentMonth: false,
-        iso,
-        disabled: isDateDisabled(y, m, d),
-        isToday: iso === today.iso,
-        isSelected: iso === value,
-      });
+    // 3. Next month padding only to complete the final week row
+    const remainder = days.length % 7;
+    if (remainder > 0) {
+      const fillCount = 7 - remainder;
+      for (let d = 1; d <= fillCount; d++) {
+        const m = currentMonth === 11 ? 0 : currentMonth + 1;
+        const y = currentMonth === 11 ? currentYear + 1 : currentYear;
+        const iso = formatDateISO(y, m, d);
+        days.push({
+          day: d,
+          month: m,
+          year: y,
+          isCurrentMonth: false,
+          iso,
+          disabled: isDateDisabled(y, m, d),
+          isToday: iso === today.iso,
+          isSelected: iso === value,
+        });
+      }
     }
 
     return days;
   }, [currentYear, currentMonth, isDateDisabled, today.iso, value]);
 
-  // Select a specific day
+  // Select a specific day and close immediately for swift UX
   const handleSelectDay = (iso: string, disabledDay: boolean) => {
     if (disabledDay || disabled) return;
     onChange(iso);
@@ -280,34 +280,12 @@ export default function DatePicker({
     setViewMode("days");
   };
 
-  // Quick preset shortcuts
-  const selectPreset = (type: "today" | "tomorrow" | "weekend" | "month") => {
-    const base = new Date();
-    if (type === "today") {
-      // today
-    } else if (type === "tomorrow") {
-      base.setDate(base.getDate() + 1);
-    } else if (type === "weekend") {
-      // upcoming Saturday
-      const day = base.getDay();
-      const diff = day === 6 ? 7 : (6 - day);
-      base.setDate(base.getDate() + diff);
-    } else if (type === "month") {
-      base.setMonth(base.getMonth() + 1);
-    }
-
-    const iso = formatDateISO(
-      base.getFullYear(),
-      base.getMonth(),
-      base.getDate()
-    );
-
-    if (minDate && iso < minDate) return;
-    if (maxDate && iso > maxDate) return;
-
-    onChange(iso);
-    setCurrentYear(base.getFullYear());
-    setCurrentMonth(base.getMonth());
+  const jumpToToday = () => {
+    if (minDate && today.iso < minDate) return;
+    if (maxDate && today.iso > maxDate) return;
+    onChange(today.iso);
+    setCurrentYear(today.year);
+    setCurrentMonth(today.month);
     setIsOpen(false);
     setViewMode("days");
   };
@@ -388,56 +366,54 @@ export default function DatePicker({
         </div>
       </button>
 
-      {/* Calendar Popover Modal */}
+      {/* Compact Calendar Popover Modal */}
       {isOpen && (
         <div
           role="dialog"
           aria-label="Calendar date picker"
-          className="absolute left-0 mt-2 z-50 w-72 sm:w-80 bg-white border border-[#E8E5DF] rounded-2xl shadow-xl p-4 animate-fade-in"
+          className="absolute left-0 mt-1.5 z-50 w-[280px] bg-white border border-[#E8E5DF] rounded-2xl shadow-[0_12px_32px_rgba(23,25,35,0.1)] p-3 animate-fade-in"
         >
-          {/* Header Bar */}
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#E8E5DF]/70">
-            {/* Prev Button */}
+          {/* Compact Header Bar */}
+          <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-[#E8E5DF]/70">
+            {/* Prev Month Button */}
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1.5 rounded-lg text-[#686D78] hover:text-[#171923] hover:bg-[#FAF9F6] transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-[#686D78] hover:text-[#171923] hover:bg-[#FAF9F6] transition-colors cursor-pointer"
               title="Previous month"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Month & Year Title Dropdown Switcher */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() =>
-                  setViewMode((mode) => (mode === "months" ? "days" : "months"))
-                }
-                className="px-2.5 py-1 text-sm font-bold text-[#171923] hover:text-[#5146E5] hover:bg-[#EEEAFE]/40 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-              >
-                <span>{MONTH_NAMES[currentMonth]}</span>
-                <span className="text-[#686D78] font-normal">{currentYear}</span>
-                <ChevronDown className="w-3 h-3 text-[#686D78]" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setViewMode((mode) => (mode === "months" ? "days" : "months"))
+              }
+              className="px-2 py-0.5 text-xs font-bold text-[#171923] hover:text-[#5146E5] hover:bg-[#EEEAFE]/50 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span>{MONTH_NAMES[currentMonth]}</span>
+              <span className="text-[#686D78] font-normal">{currentYear}</span>
+              <ChevronDown className="w-3 h-3 text-[#686D78]" />
+            </button>
 
-            {/* Next Button */}
+            {/* Next Month Button */}
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1.5 rounded-lg text-[#686D78] hover:text-[#171923] hover:bg-[#FAF9F6] transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-[#686D78] hover:text-[#171923] hover:bg-[#FAF9F6] transition-colors cursor-pointer"
               title="Next month"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          {/* VIEW 1: Month / Year Quick Grid */}
+          {/* VIEW 1: Quick 12-Month Grid */}
           {viewMode === "months" ? (
-            <div className="space-y-3 py-1">
+            <div className="space-y-2 py-1">
               {/* Year navigation stepper */}
-              <div className="flex items-center justify-between px-2 text-xs font-semibold text-[#171923]">
+              <div className="flex items-center justify-between px-1 text-xs font-semibold text-[#171923]">
                 <button
                   type="button"
                   onClick={() => setCurrentYear((y) => y - 1)}
@@ -445,7 +421,7 @@ export default function DatePicker({
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="font-bold text-sm text-[#5146E5]">
+                <span className="font-bold text-xs text-[#5146E5]">
                   {currentYear}
                 </span>
                 <button
@@ -458,7 +434,7 @@ export default function DatePicker({
               </div>
 
               {/* 12 Months Grid */}
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-1">
                 {MONTH_SHORT.map((name, idx) => {
                   const isCurrent = idx === currentMonth;
                   return (
@@ -469,7 +445,7 @@ export default function DatePicker({
                         setCurrentMonth(idx);
                         setViewMode("days");
                       }}
-                      className={`py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      className={`py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         isCurrent
                           ? "bg-[#5146E5] text-white shadow-xs"
                           : "text-[#171923] hover:bg-[#FAF9F6] hover:text-[#5146E5]"
@@ -483,13 +459,13 @@ export default function DatePicker({
             </div>
           ) : (
             /* VIEW 2: Standard Days View */
-            <div className="space-y-2">
+            <div>
               {/* Day of Week Headers */}
-              <div className="grid grid-cols-7 gap-1 text-center">
+              <div className="grid grid-cols-7 gap-0.5 text-center mb-1">
                 {DAY_NAMES.map((d) => (
                   <div
                     key={d}
-                    className="text-[11px] font-semibold text-[#9CA3AF] uppercase py-1"
+                    className="text-[10px] font-semibold text-[#9CA3AF] uppercase py-0.5"
                   >
                     {d}
                   </div>
@@ -497,7 +473,7 @@ export default function DatePicker({
               </div>
 
               {/* Days Grid */}
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-0.5">
                 {calendarDays.map((d, index) => {
                   return (
                     <button
@@ -505,13 +481,13 @@ export default function DatePicker({
                       type="button"
                       disabled={d.disabled}
                       onClick={() => handleSelectDay(d.iso, d.disabled)}
-                      className={`h-8 sm:h-9 w-full rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center cursor-pointer relative ${
+                      className={`h-7.5 w-full rounded-lg text-xs font-medium transition-all flex items-center justify-center cursor-pointer relative ${
                         d.isSelected
                           ? "bg-[#5146E5] text-white font-bold shadow-xs hover:bg-[#4338CA]"
                           : d.isToday
                           ? "border border-[#5146E5] text-[#5146E5] font-semibold bg-[#EEEAFE]/30 hover:bg-[#EEEAFE]/60"
                           : d.disabled
-                          ? "text-[#D1D5DB] cursor-not-allowed opacity-40 line-through"
+                          ? "text-[#E5E7EB] cursor-not-allowed opacity-35 line-through"
                           : d.isCurrentMonth
                           ? "text-[#171923] hover:bg-[#FAF9F6] hover:text-[#5146E5]"
                           : "text-[#D1D5DB] hover:text-[#9CA3AF] hover:bg-[#FAF9F6]/50"
@@ -525,48 +501,17 @@ export default function DatePicker({
             </div>
           )}
 
-          {/* Quick Presets Bar */}
-          {showPresets && viewMode === "days" && (
-            <div className="mt-3 pt-2.5 border-t border-[#E8E5DF]/70">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mr-0.5">
-                  Quick:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => selectPreset("today")}
-                  className="px-2 py-0.5 text-[11px] font-medium bg-[#FAF9F6] hover:bg-[#EEEAFE] hover:text-[#5146E5] border border-[#E8E5DF] text-[#686D78] rounded-md transition-colors cursor-pointer"
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => selectPreset("tomorrow")}
-                  className="px-2 py-0.5 text-[11px] font-medium bg-[#FAF9F6] hover:bg-[#EEEAFE] hover:text-[#5146E5] border border-[#E8E5DF] text-[#686D78] rounded-md transition-colors cursor-pointer"
-                >
-                  Tomorrow
-                </button>
-                <button
-                  type="button"
-                  onClick={() => selectPreset("weekend")}
-                  className="px-2 py-0.5 text-[11px] font-medium bg-[#FAF9F6] hover:bg-[#EEEAFE] hover:text-[#5146E5] border border-[#E8E5DF] text-[#686D78] rounded-md transition-colors cursor-pointer"
-                >
-                  Weekend
-                </button>
-                <button
-                  type="button"
-                  onClick={() => selectPreset("month")}
-                  className="px-2 py-0.5 text-[11px] font-medium bg-[#FAF9F6] hover:bg-[#EEEAFE] hover:text-[#5146E5] border border-[#E8E5DF] text-[#686D78] rounded-md transition-colors cursor-pointer"
-                >
-                  +1 Mo
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Slim Utility Footer */}
+          <div className="mt-2 pt-1.5 border-t border-[#E8E5DF]/70 flex items-center justify-between text-[11px]">
+            <button
+              type="button"
+              onClick={jumpToToday}
+              className="text-[#5146E5] hover:text-[#4338CA] font-medium transition-colors cursor-pointer"
+            >
+              Today
+            </button>
 
-          {/* Footer Controls */}
-          <div className="mt-3 pt-2 border-t border-[#E8E5DF]/70 flex items-center justify-between text-xs">
-            {value ? (
+            {value && (
               <button
                 type="button"
                 onClick={() => {
@@ -577,21 +522,7 @@ export default function DatePicker({
               >
                 Clear
               </button>
-            ) : (
-              <span className="text-[11px] text-[#9CA3AF]">Pick any date</span>
             )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                setViewMode("days");
-                onBlur?.();
-              }}
-              className="px-3 py-1 bg-[#171923] hover:bg-black text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-            >
-              Done
-            </button>
           </div>
         </div>
       )}
