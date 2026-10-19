@@ -162,6 +162,47 @@ describe("Phase 6: Security, Regression & Production Readiness", () => {
       const result = eventCreationSchema.safeParse(zeroCapacityPayload);
       assert.equal(result.success, false);
     });
+
+    it("accepts future date with human-readable 12-hour time formats like '10:00 AM - 4:00 PM'", () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+      const futureStr = futureDate.toISOString().split("T")[0];
+
+      const payload = {
+        title: "Future Community Meetup",
+        description: "Join us for an evening of networking and tech talks.",
+        date: futureStr,
+        time: "10:00 AM - 4:00 PM",
+        location: "Koramangala, Bengaluru",
+        capacity: 100,
+        registrationDeadline: futureStr,
+      };
+
+      const result = eventCreationSchema.safeParse(payload);
+      assert.equal(result.success, true);
+    });
+
+    it("rejects event dates strictly in the past", () => {
+      const pastPayload = {
+        title: "Past Event",
+        description: "This event occurred in the past and should fail validation.",
+        date: "2020-01-15",
+        time: "10:00 AM",
+        location: "Bengaluru",
+        capacity: 50,
+        registrationDeadline: "2020-01-14",
+      };
+
+      const result = eventCreationSchema.safeParse(pastPayload);
+      assert.equal(result.success, false);
+      if (!result.success) {
+        assert.ok(
+          result.error.issues.some((i) =>
+            i.message.includes("Event date and time must be in the future")
+          )
+        );
+      }
+    });
   });
 
   describe("Security: CSV Export Formula Sanitization", () => {

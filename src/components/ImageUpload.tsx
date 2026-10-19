@@ -41,14 +41,27 @@ export default function ImageUpload({
   uploadType = "event",
   eventId,
 }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string>(value);
-  const [currentPublicId, setCurrentPublicId] = useState<string>(publicId);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [localPublicId, setLocalPublicId] = useState<string | null>(null);
+  const [prevValue, setPrevValue] = useState<string>(value);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [imageLoadError, setImageLoadError] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset local override when parent value prop changes (React recommended pattern)
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setLocalPreview(null);
+    setLocalPublicId(null);
+    setImageLoadError(false);
+  }
+
+  const preview = localPreview !== null ? localPreview : value;
+  const currentPublicId = localPublicId !== null ? localPublicId : publicId;
 
   const updateUploading = (uploading: boolean) => {
     setIsUploading(uploading);
@@ -58,6 +71,7 @@ export default function ImageUpload({
   const handleFileProcess = async (file: File) => {
     setUploadError(null);
     setUploadSuccess(false);
+    setImageLoadError(false);
 
     // 1. Client-side format validation
     if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -77,7 +91,7 @@ export default function ImageUpload({
 
     // 3. Create local preview
     const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    setLocalPreview(objectUrl);
     updateUploading(true);
 
     try {
@@ -102,14 +116,14 @@ export default function ImageUpload({
         throw new Error(data.error || "Failed to upload image to Cloudinary");
       }
 
-      setCurrentPublicId(data.publicId);
-      setPreview(data.secureUrl);
+      setLocalPublicId(data.publicId);
+      setLocalPreview(data.secureUrl);
       setUploadSuccess(true);
       onChange(data.secureUrl, data.publicId);
     } catch (err) {
       console.error("Upload error:", err);
       // Revert preview on failure
-      setPreview(value);
+      setLocalPreview(null);
       setUploadError(
         err instanceof Error
           ? err.message
@@ -117,7 +131,10 @@ export default function ImageUpload({
       );
     } finally {
       updateUploading(false);
-      URL.revokeObjectURL(objectUrl);
+      // Give browser time to display the newly returned secureUrl before revoking blob
+      setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 1000);
     }
   };
 
@@ -157,10 +174,11 @@ export default function ImageUpload({
 
   const handleRemove = async () => {
     const publicIdToDelete = currentPublicId;
-    setPreview("");
-    setCurrentPublicId("");
+    setLocalPreview("");
+    setLocalPublicId("");
     setUploadError(null);
     setUploadSuccess(false);
+    setImageLoadError(false);
     onChange("", "");
     onRemove?.();
 
@@ -177,6 +195,8 @@ export default function ImageUpload({
     }
   };
 
+  const isProfile = uploadType === "profile";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -192,48 +212,79 @@ export default function ImageUpload({
       </div>
 
       {preview ? (
-        <div className="relative group rounded-xl overflow-hidden border border-[#E8E5DF] bg-white shadow-2xs aspect-video sm:aspect-21/9 max-h-72 w-full transition-all">
-          <Image
-            src={preview}
-            alt="Event poster preview"
-            fill
-            sizes="(max-width: 768px) 100vw, 700px"
-            className="object-cover transition-transform duration-300 group-hover:scale-101"
-            priority={false}
-          />
-
-          {/* Overlay controls */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-end justify-between p-3 sm:p-4">
-            <div className="flex items-center gap-2">
+        <div
+          className={`relative group overflow-hidden border border-[#E8E5DF] bg-[#FAF9F6] shadow-xs transition-all ${
+            isProfile
+              ? "w-32 h-32 rounded-full mx-auto"
+              : "w-full h-56 sm:h-72 min-h-[224px] rounded-xl"
+          }`}
+        >
+          {!imageLoadError ? (
+            <Image
+              src={preview}
+              alt={label}
+              fill
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 750px"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+              priority={false}
+              onError={() => setImageLoadError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[#FEF2F2] p-4 text-center">
+              <AlertCircle className="w-6 h-6 text-[#DC2626] mb-1" />
+              <p className="text-xs font-medium text-[#DC2626]">
+                Unable to display image preview
+              </p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || isUploading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/95 hover:bg-white text-[#171923] text-xs font-semibold rounded-lg shadow-sm backdrop-blur-xs transition-colors cursor-pointer disabled:opacity-50"
+                className="mt-2 text-xs text-[#5146E5] underline cursor-pointer"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-[#5146E5]" />
-                <span>Replace</span>
+                Choose another file
               </button>
             </div>
+          )}
+
+          {/* Top-right Status Badge */}
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-xs border border-[#E8E5DF] shadow-xs text-[11px] font-semibold text-[#171923]">
+            <CheckCircle2 className="w-3 h-3 text-[#059669]" />
+            <span>Ready</span>
+          </div>
+
+          {/* Bottom Action Controls */}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 sm:p-4 flex items-center justify-between z-10">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isUploading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/95 hover:bg-white text-[#171923] text-xs font-semibold rounded-lg shadow-sm backdrop-blur-xs transition-all cursor-pointer disabled:opacity-50 hover:shadow"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#5146E5]" />
+              <span>Replace</span>
+            </button>
 
             <button
               type="button"
               onClick={handleRemove}
               disabled={disabled || isUploading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FEF2F2]/95 hover:bg-[#FEF2F2] text-[#DC2626] text-xs font-semibold rounded-lg shadow-sm backdrop-blur-xs transition-colors cursor-pointer disabled:opacity-50"
-              title="Remove poster"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/90 hover:bg-red-600 text-white text-xs font-semibold rounded-lg shadow-sm backdrop-blur-xs transition-all cursor-pointer disabled:opacity-50 hover:shadow"
+              title="Remove image"
             >
               <X className="w-3.5 h-3.5" />
               <span>Remove</span>
             </button>
           </div>
 
-          {/* Uploading progress indicator */}
+          {/* Uploading progress indicator overlay */}
           {isUploading && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-10">
-              <Loader2 className="w-6 h-6 text-[#5146E5] animate-spin" />
-              <span className="text-xs font-medium text-[#171923]">
+            <div className="absolute inset-0 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
+              <Loader2 className="w-7 h-7 text-[#5146E5] animate-spin" />
+              <span className="text-xs font-semibold text-[#171923]">
                 Optimizing & uploading to Cloudinary...
+              </span>
+              <span className="text-[11px] text-[#686D78]">
+                Please wait a moment
               </span>
             </div>
           )}
