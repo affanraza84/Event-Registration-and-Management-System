@@ -17,6 +17,17 @@ export const metadata: Metadata = {
   title: "EventScout — Live Event Discovery & Registration",
   description:
     "Curated discovery and seamless RSVP management for tech meetups, hackathons, conferences, and community gatherings across India.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="scoutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="55%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#3730A3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background tile with smooth squircle corners -->
+  <rect width="64" height="64" rx="16" fill="url(#scoutGrad)"/>
+  <rect width="61" height="61" x="1.5" y="1.5" rx="14.5" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1.5"/>
+
+  <!-- Compass dial circle -->
+  <circle cx="32" cy="32" r="20" stroke="#FFFFFF" stroke-width="4"/>
+
+  <!-- Scout Compass Needle -->
+  <!-- North-East Pointer (Active Scout): Crisp Pure White & Light Ice -->
+  <polygon points="43.5,20.5 32,32 27.5,27.5" fill="#FFFFFF"/>
+  <polygon points="43.5,20.5 36.5,36.5 32,32" fill="#E0E7FF"/>
+
+  <!-- South-West Pointer: Soft Periwinkle & Light Indigo -->
+  <polygon points="20.5,43.5 32,32 27.5,27.5" fill="#C7D2FE"/>
+  <polygon points="20.5,43.5 36.5,36.5 32,32" fill="#A5B4FC"/>
+
+  <!-- Center Pivot Pin -->
+  <circle cx="32" cy="32" r="3.5" fill="#FFFFFF"/>
+  <circle cx="32" cy="32" r="1.8" fill="#4338CA"/>
+</svg>
