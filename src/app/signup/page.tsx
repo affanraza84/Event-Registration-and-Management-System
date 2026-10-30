@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { signupSchema, SignupInput } from "@/validations/auth";
 import { signUpAction } from "@/actions/auth";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -61,7 +62,12 @@ export default function SignupPage() {
       const result = await signUpAction(data);
 
       if (result?.error) {
-        setGlobalError(result.error);
+        setGlobalError(
+          getClearErrorMessage(
+            result.error,
+            "Unable to create your account. Please check your details and try again."
+          )
+        );
         setIsLoading(false);
         return;
       }
@@ -83,8 +89,13 @@ export default function SignupPage() {
         router.refresh();
         router.push(data.role === "host" ? "/dashboard" : "/my-events");
       }
-    } catch {
-      setGlobalError("An unexpected error occurred. Please try again.");
+    } catch (err) {
+      setGlobalError(
+        getClearErrorMessage(
+          err,
+          "An unexpected error occurred during signup. Please try again."
+        )
+      );
       setIsLoading(false);
     }
   };

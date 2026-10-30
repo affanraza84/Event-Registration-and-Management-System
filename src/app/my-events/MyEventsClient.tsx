@@ -18,6 +18,7 @@ import {
 import { cancelRegistrationAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
 import { getEventCover } from "@/lib/eventCovers";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 interface RegistrationItem {
   id: string;
@@ -79,7 +80,12 @@ export default function MyEventsClient({
       const result = await cancelRegistrationAction(selectedRegId);
 
       if (result.error) {
-        setErrorMsg(result.error);
+        setErrorMsg(
+          getClearErrorMessage(
+            result.error,
+            "Unable to cancel your registration. Please try again."
+          )
+        );
       } else {
         setRegistrations((prev) =>
           prev.filter((item) => item.id !== selectedRegId)
@@ -87,8 +93,13 @@ export default function MyEventsClient({
         closeConfirmation();
         router.refresh();
       }
-    } catch {
-      setErrorMsg("Failed to cancel registration. Please try again.");
+    } catch (err) {
+      setErrorMsg(
+        getClearErrorMessage(
+          err,
+          "Failed to cancel registration. Please try again."
+        )
+      );
     } finally {
       setIsCancelling(false);
     }

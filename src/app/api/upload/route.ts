@@ -11,6 +11,7 @@ import {
   uploadImageBuffer,
   deleteCloudinaryAsset,
 } from "@/lib/cloudinary";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -164,8 +165,10 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: unknown) {
     console.error("API POST /api/upload error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during image upload";
+    const errorMessage = getClearErrorMessage(
+      error,
+      "An unexpected error occurred during image upload. Please try again."
+    );
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
@@ -213,8 +216,10 @@ export async function DELETE(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("API DELETE /api/upload error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during asset removal";
+    const errorMessage = getClearErrorMessage(
+      error,
+      "An unexpected error occurred during asset removal. Please try again."
+    );
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

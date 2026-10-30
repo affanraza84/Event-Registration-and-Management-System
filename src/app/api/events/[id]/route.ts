@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export async function GET(
   req: NextRequest,
@@ -16,7 +17,7 @@ export async function GET(
 
     if (!event) {
       return NextResponse.json(
-        { error: `Event with slug "${id}" not found` },
+        { error: "The requested event could not be found." },
         { status: 404 }
       );
     }
@@ -24,8 +25,10 @@ export async function GET(
     return NextResponse.json({ success: true, event }, { status: 200 });
   } catch (error: unknown) {
     console.error("API GET /api/events/[id] error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred";
+    const errorMessage = getClearErrorMessage(
+      error,
+      "An unexpected error occurred while fetching the event. Please try again."
+    );
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }

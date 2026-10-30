@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { eventCreationSchema, EventCreationInput } from "@/validations/event";
 import { createEventAction } from "@/actions/events";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 import Navbar from "@/components/Navbar";
 import ImageUpload from "@/components/ImageUpload";
 import DatePicker from "@/components/DatePicker";
@@ -84,12 +85,22 @@ export default function CreateEventForm({ initialDraft }: CreateEventFormProps) 
       const result = await createEventAction(data);
 
       if (result.error) {
-        setGlobalError(result.error);
+        setGlobalError(
+          getClearErrorMessage(
+            result.error,
+            "Unable to create the event. Please check your information and try again."
+          )
+        );
       } else if (result.success && result.event) {
         router.push(`/events/${result.event.slug}`);
       }
-    } catch {
-      setGlobalError("An unexpected error occurred. Please try again.");
+    } catch (err) {
+      setGlobalError(
+        getClearErrorMessage(
+          err,
+          "An unexpected error occurred while creating the event. Please try again."
+        )
+      );
     } finally {
       setIsLoading(false);
     }

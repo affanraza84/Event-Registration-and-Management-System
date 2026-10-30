@@ -6,6 +6,7 @@ import Event from "@/models/Event";
 import { getUniqueSlug } from "@/utils/slug";
 import { eventCreationSchema } from "@/validations/event";
 import mongoose from "mongoose";
+import { getClearErrorMessage, formatValidationErrors } from "@/utils/errorMessage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     if (!session || session.user.role !== "host") {
       return NextResponse.json(
-        { error: "Unauthorized: Only hosts can create events" },
+        { error: "Only registered host accounts can create new events." },
         { status: 401 }
       );
     }
@@ -21,10 +22,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = eventCreationSchema.safeParse(body);
     if (!validated.success) {
-      const errorMessage = validated.error.issues
-        .map((err) => err.message)
-        .join(", ");
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
+      return NextResponse.json(
+        { error: formatValidationErrors(validated.error.issues) },
+        { status: 400 }
+      );
     }
 
     const {
@@ -71,7 +72,10 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("API POST /api/events error:", error);
-    const message = error instanceof Error ? error.message : "An unexpected error occurred";
+    const message = getClearErrorMessage(
+      error,
+      "An unexpected error occurred while creating the event. Please try again."
+    );
     return NextResponse.json(
       { error: message },
       { status: 500 }

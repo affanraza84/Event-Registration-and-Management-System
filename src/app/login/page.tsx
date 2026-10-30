@@ -21,6 +21,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { loginSchema, LoginInput } from "@/validations/auth";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 function LoginForm() {
   const router = useRouter();
@@ -66,7 +67,10 @@ function LoginForm() {
 
       if (result?.error) {
         setGlobalError(
-          result.error || "Invalid credentials. Please verify your email and password."
+          getClearErrorMessage(
+            result.error,
+            "The email or password you entered is incorrect. Please verify your credentials and try again."
+          )
         );
       } else {
         if (callbackUrl) {
@@ -76,8 +80,13 @@ function LoginForm() {
         }
         router.refresh();
       }
-    } catch {
-      setGlobalError("An unexpected error occurred. Please try again.");
+    } catch (err) {
+      setGlobalError(
+        getClearErrorMessage(
+          err,
+          "An unexpected error occurred while signing in. Please try again."
+        )
+      );
     } finally {
       setIsLoading(false);
     }

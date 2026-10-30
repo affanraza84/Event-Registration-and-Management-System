@@ -11,6 +11,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 interface ImageUploadProps {
   value?: string;
@@ -125,9 +126,10 @@ export default function ImageUpload({
       // Revert preview on failure
       setLocalPreview(null);
       setUploadError(
-        err instanceof Error
-          ? err.message
-          : "Failed to upload image. Please verify your connection."
+        getClearErrorMessage(
+          err,
+          "Failed to upload image. Please verify your connection and try again."
+        )
       );
     } finally {
       updateUploading(false);

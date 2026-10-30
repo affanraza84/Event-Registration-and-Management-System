@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { getHostDashboardDataAction } from "@/actions/events";
 import DashboardClient from "./DashboardClient";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export const metadata = {
   title: "Host Dashboard | EventScout",
@@ -23,13 +24,17 @@ export default async function DashboardPage() {
   const result = await getHostDashboardDataAction();
 
   if (result.error) {
+    const clearError = getClearErrorMessage(
+      result.error,
+      "We were unable to load your dashboard at this time. Please try reloading."
+    );
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] text-[#171923] p-4">
         <div className="text-center p-8 bg-white border border-[#E8E5DF] rounded-2xl max-w-md shadow-xs">
           <h2 className="text-xl font-bold text-[#DC2626] mb-2">
             Error Loading Dashboard
           </h2>
-          <p className="text-[#686D78] text-sm mb-6">{result.error}</p>
+          <p className="text-[#686D78] text-sm mb-6">{clearError}</p>
           <a
             href="/dashboard"
             className="inline-block px-5 py-2.5 bg-[#5146E5] hover:bg-[#4338CA] rounded-xl text-white text-sm font-medium transition-all shadow-xs"

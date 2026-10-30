@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";
 import Registration from "@/models/Registration";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export async function GET(
   req: NextRequest,
@@ -14,7 +15,7 @@ export async function GET(
 
     if (!session || session.user.role !== "host") {
       return NextResponse.json(
-        { error: "Unauthorized: Only hosts can export registration data" },
+        { error: "Only event hosts can export registration attendee data." },
         { status: 401 }
       );
     }
@@ -26,12 +27,12 @@ export async function GET(
     // Check event existence and Host ownership
     const event = await Event.findById(eventId);
     if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      return NextResponse.json({ error: "The requested event could not be found." }, { status: 404 });
     }
 
     if (event.hostId.toString() !== session.user.id) {
       return NextResponse.json(
-        { error: "Unauthorized: You do not own this event" },
+        { error: "You do not have permission to modify this event because you are not its host." },
         { status: 403 }
       );
     }
@@ -74,8 +75,10 @@ export async function GET(
     });
   } catch (error: unknown) {
     console.error("CSV Export API error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during CSV export";
+    const errorMessage = getClearErrorMessage(
+      error,
+      "An unexpected error occurred during CSV export. Please try again."
+    );
     return NextResponse.json(
       {
         error: errorMessage,

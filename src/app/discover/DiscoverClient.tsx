@@ -28,6 +28,7 @@ import {
   buildDraftUrlParams,
 } from "@/utils/draftHelper";
 import { getEventCover } from "@/lib/eventCovers";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 interface DiscoverClientProps {
   initialValues?: {
@@ -232,7 +233,12 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
           const apiError =
             data.error ||
             `Search request failed with status code ${response.status}.`;
-          setErrorMessage(apiError);
+          setErrorMessage(
+            getClearErrorMessage(
+              apiError,
+              "An error occurred while fetching live events. Please check your query or try again."
+            )
+          );
           setStatus("error");
           setResults([]);
           return;
@@ -263,7 +269,10 @@ export default function DiscoverClient({ initialValues }: DiscoverClientProps) {
         }
         if (currentRequestId === latestRequestIdRef.current) {
           setErrorMessage(
-            "Network error while connecting to Event Discovery Service. Please try again."
+            getClearErrorMessage(
+              err,
+              "Network error while connecting to Event Discovery Service. Please try again."
+            )
           );
           setStatus("error");
           setResults([]);

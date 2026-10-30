@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export default function ErrorBoundary({
   error,
@@ -14,6 +15,11 @@ export default function ErrorBoundary({
   useEffect(() => {
     console.error("Application error boundary caught error:", error);
   }, [error]);
+
+  const clearMessage = getClearErrorMessage(
+    error,
+    "An unexpected error occurred while rendering this view. Please try reloading or returning to the homepage."
+  );
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#171923] flex flex-col items-center justify-center p-6">
@@ -27,7 +33,7 @@ export default function ErrorBoundary({
             Something went wrong
           </h1>
           <p className="text-sm text-[#686D78] leading-relaxed">
-            An unexpected error occurred while rendering this view. Please try reloading or returning to the homepage.
+            {clearMessage}
           </p>
         </div>
 

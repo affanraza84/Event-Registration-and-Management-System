@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import "./globals.css";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export default function GlobalError({
   error,
@@ -13,6 +14,11 @@ export default function GlobalError({
   useEffect(() => {
     console.error("Global application error:", error);
   }, [error]);
+
+  const clearMessage = getClearErrorMessage(
+    error,
+    "A critical error occurred while loading the application. Please reload or try again later."
+  );
 
   return (
     <html lang="en">
@@ -39,7 +45,7 @@ export default function GlobalError({
               Application Error
             </h1>
             <p className="text-sm text-[#686D78] leading-relaxed">
-              A critical server error occurred. Please verify your environment configuration and reload.
+              {clearMessage}
             </p>
           </div>
 

@@ -35,6 +35,7 @@ import Navbar from "@/components/Navbar";
 import ImageUpload from "@/components/ImageUpload";
 import DatePicker from "@/components/DatePicker";
 import { getEventCover } from "@/lib/eventCovers";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 interface EventItem {
   id: string;
@@ -170,7 +171,12 @@ export default function DashboardClient({
       const result = await closeEventAction(selectedEvent.id);
 
       if (result.error) {
-        setActionError(result.error);
+        setActionError(
+          getClearErrorMessage(
+            result.error,
+            "Unable to close this event. Please try again."
+          )
+        );
       } else {
         setEvents((prev) =>
           prev.map((e) =>
@@ -181,8 +187,13 @@ export default function DashboardClient({
         setSelectedEvent(null);
         router.refresh();
       }
-    } catch {
-      setActionError("Failed to close the event. Please try again.");
+    } catch (err) {
+      setActionError(
+        getClearErrorMessage(
+          err,
+          "Failed to close the event. Please try again."
+        )
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -204,7 +215,12 @@ export default function DashboardClient({
       const result = await deleteEventAction(selectedEvent.id);
 
       if (result.error) {
-        setActionError(result.error);
+        setActionError(
+          getClearErrorMessage(
+            result.error,
+            "Unable to delete this event. Please try again."
+          )
+        );
       } else {
         setEvents((prev) => prev.filter((e) => e.id !== selectedEvent.id));
         setRegistrations((prev) =>
@@ -226,8 +242,13 @@ export default function DashboardClient({
         setSelectedEvent(null);
         router.refresh();
       }
-    } catch {
-      setActionError("Failed to delete the event. Please try again.");
+    } catch (err) {
+      setActionError(
+        getClearErrorMessage(
+          err,
+          "Failed to delete the event. Please try again."
+        )
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -264,7 +285,12 @@ export default function DashboardClient({
     try {
       const result = await updateEventAction(eventToEdit.id, editForm);
       if (result.error) {
-        setEditError(result.error);
+        setEditError(
+          getClearErrorMessage(
+            result.error,
+            "Unable to update event. Please check your information and try again."
+          )
+        );
       } else {
         setEvents((prev) =>
           prev.map((ev) =>
@@ -291,8 +317,13 @@ export default function DashboardClient({
         setEventToEdit(null);
         router.refresh();
       }
-    } catch {
-      setEditError("Failed to update event. Please try again.");
+    } catch (err) {
+      setEditError(
+        getClearErrorMessage(
+          err,
+          "Failed to update event. Please try again."
+        )
+      );
     } finally {
       setIsProcessing(false);
     }

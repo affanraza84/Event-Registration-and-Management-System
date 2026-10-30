@@ -5,16 +5,14 @@ import { connectToDatabase } from "@/lib/db";
 import Host from "@/models/Host";
 import Attendee from "@/models/Attendee";
 import { signupSchema } from "@/validations/auth";
+import { getClearErrorMessage, formatValidationErrors } from "@/utils/errorMessage";
 
 export async function signUpAction(data: unknown) {
   try {
     const validated = signupSchema.safeParse(data);
 
     if (!validated.success) {
-      const errorMessage = validated.error.issues
-        .map((err) => err.message)
-        .join(", ");
-      return { error: errorMessage };
+      return { error: formatValidationErrors(validated.error.issues) };
     }
 
     const { name, email, password, role } = validated.data;
@@ -24,7 +22,7 @@ export async function signUpAction(data: unknown) {
     if (role === "host") {
       const existingHost = await Host.findOne({ email });
       if (existingHost) {
-        return { error: "An account with this email already exists" };
+        return { error: "An account with this email address already exists. Please sign in instead." };
       }
 
       const passwordHash = await bcrypt.hash(password, 12);
@@ -46,7 +44,7 @@ export async function signUpAction(data: unknown) {
     } else {
       const existingAttendee = await Attendee.findOne({ email });
       if (existingAttendee) {
-        return { error: "An account with this email already exists" };
+        return { error: "An account with this email address already exists. Please sign in instead." };
       }
 
       const passwordHash = await bcrypt.hash(password, 12);
@@ -68,10 +66,11 @@ export async function signUpAction(data: unknown) {
     }
   } catch (error: unknown) {
     console.error("Signup error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during signup";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred during signup. Please try again."
+      ),
     };
   }
 }

@@ -29,6 +29,7 @@ import {
 import { registerForEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
 import { getEventCover } from "@/lib/eventCovers";
+import { getClearErrorMessage } from "@/utils/errorMessage";
 
 interface EventDetailsClientProps {
   event: {
@@ -134,7 +135,12 @@ export default function EventDetailsClient({
       });
 
       if (result.error) {
-        setGlobalError(result.error);
+        setGlobalError(
+          getClearErrorMessage(
+            result.error,
+            "Unable to register for this event. Please try again."
+          )
+        );
         setIsSubmitting(false);
         return;
       }
@@ -157,8 +163,13 @@ export default function EventDetailsClient({
       }
 
       router.refresh();
-    } catch {
-      setGlobalError("An unexpected error occurred. Please try again.");
+    } catch (err) {
+      setGlobalError(
+        getClearErrorMessage(
+          err,
+          "An unexpected error occurred during registration. Please try again."
+        )
+      );
     } finally {
       setIsSubmitting(false);
     }

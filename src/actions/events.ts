@@ -12,6 +12,7 @@ import { eventCreationSchema } from "@/validations/event";
 import mongoose from "mongoose";
 import { IEvent } from "@/types";
 import { deleteCloudinaryAsset } from "@/lib/cloudinary";
+import { getClearErrorMessage, formatValidationErrors } from "@/utils/errorMessage";
 
 /**
  * Server Action for Host to create a new event.
@@ -21,15 +22,12 @@ export async function createEventAction(data: unknown) {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "host") {
-      return { error: "Unauthorized: Only hosts can create events" };
+      return { error: "Only registered host accounts can create new events." };
     }
 
     const validated = eventCreationSchema.safeParse(data);
     if (!validated.success) {
-      const errorMessage = validated.error.issues
-        .map((err) => err.message)
-        .join(", ");
-      return { error: errorMessage };
+      return { error: formatValidationErrors(validated.error.issues) };
     }
 
     const {
@@ -73,10 +71,11 @@ export async function createEventAction(data: unknown) {
     };
   } catch (error: unknown) {
     console.error("Create event error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during event creation";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred while creating the event. Please try again."
+      ),
     };
   }
 }
@@ -95,7 +94,7 @@ export async function registerForEventAction(data: {
 
     const event = await Event.findById(data.eventId);
     if (!event) {
-      return { error: "Event not found" };
+      return { error: "The requested event could not be found. It may have been removed." };
     }
 
     // 1. Check Registration Deadline
@@ -103,12 +102,12 @@ export async function registerForEventAction(data: {
     // Allow deadline up to end of the day (23:59:59)
     const deadlineEnd = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate(), 23, 59, 59);
     if (new Date() > deadlineEnd) {
-      return { error: "Registration Closed: The deadline has passed" };
+      return { error: "Registration for this event is closed because the deadline has passed." };
     }
 
     // 2. Check Capacity Limit
     if (event.attendeeCount >= event.capacity || event.isClosed) {
-      return { error: "Registration Closed: Event is at full capacity" };
+      return { error: "Registration is closed because this event has reached full capacity." };
     }
 
     const session = await getServerSession(authOptions);
@@ -130,7 +129,7 @@ export async function registerForEventAction(data: {
       if (!isAlreadyLoggedIn) {
         if (!data.password) {
           return {
-            error: "An account already exists with this email. Please log in or provide your password.",
+            error: "An account already exists with this email address. Please sign in or enter your password to RSVP.",
           };
         }
         const isPasswordValid = await bcrypt.compare(
@@ -138,16 +137,16 @@ export async function registerForEventAction(data: {
           attendee.passwordHash
         );
         if (!isPasswordValid) {
-          return { error: "Incorrect password for this email address" };
+          return { error: "The password you entered is incorrect. Please try again." };
         }
       }
     } else {
       // Create new attendee account
       if (!data.password || data.password.length < 6) {
-        return { error: "Password must be at least 6 characters for a new account" };
+        return { error: "Your password must be at least 6 characters long." };
       }
       if (!data.name || data.name.trim().length < 2) {
-        return { error: "Name must be at least 2 characters for a new account" };
+        return { error: "Please enter your full name (at least 2 characters)." };
       }
 
       const passwordHash = await bcrypt.hash(data.password, 12);
@@ -165,7 +164,7 @@ export async function registerForEventAction(data: {
     });
 
     if (existingRegistration) {
-      return { error: "You are already registered for this event" };
+      return { error: "You are already registered for this event." };
     }
 
     // 4. Atomic capacity allocation (increment attendeeCount if less than capacity)
@@ -182,7 +181,7 @@ export async function registerForEventAction(data: {
     );
 
     if (!updatedEvent) {
-      return { error: "Registration Closed: Event is at full capacity" };
+      return { error: "Registration is closed because this event has reached full capacity." };
     }
 
     // 5. Create registration record
@@ -208,16 +207,17 @@ export async function registerForEventAction(data: {
       await Event.findByIdAndUpdate(event._id, { $inc: { attendeeCount: -1 } });
       const code = (regError as { code?: number })?.code;
       if (code === 11000) {
-        return { error: "You are already registered for this event" };
+        return { error: "You are already registered for this event." };
       }
       throw regError;
     }
   } catch (error: unknown) {
     console.error("Register event error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during registration";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred during registration. Please try again."
+      ),
     };
   }
 }
@@ -230,19 +230,19 @@ export async function cancelRegistrationAction(registrationId: string) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return { error: "Unauthorized: You must be logged in to cancel a registration" };
+      return { error: "Please sign in to cancel your registration." };
     }
 
     await connectToDatabase();
 
     const registration = await Registration.findById(registrationId);
     if (!registration) {
-      return { error: "Registration not found" };
+      return { error: "The requested registration record could not be found." };
     }
 
     const event = await Event.findById(registration.eventId);
     if (!event) {
-      return { error: "Event not found" };
+      return { error: "The requested event could not be found. It may have been removed." };
     }
 
     // Check if the current user is authorized:
@@ -255,7 +255,7 @@ export async function cancelRegistrationAction(registrationId: string) {
       session.user.role === "host" && session.user.id === event.hostId.toString();
 
     if (!isOwnerAttendee && !isEventHost) {
-      return { error: "Unauthorized: You cannot cancel this registration" };
+      return { error: "You do not have permission to cancel this registration." };
     }
 
     // Delete registration
@@ -269,10 +269,11 @@ export async function cancelRegistrationAction(registrationId: string) {
     return { success: true };
   } catch (error: unknown) {
     console.error("Cancel registration error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during cancellation";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred while cancelling your registration. Please try again."
+      ),
     };
   }
 }
@@ -285,18 +286,18 @@ export async function closeEventAction(eventId: string) {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "host") {
-      return { error: "Unauthorized: Only hosts can close events" };
+      return { error: "Only registered host accounts can close events." };
     }
 
     await connectToDatabase();
 
     const event = await Event.findById(eventId);
     if (!event) {
-      return { error: "Event not found" };
+      return { error: "The requested event could not be found." };
     }
 
     if (event.hostId.toString() !== session.user.id) {
-      return { error: "Unauthorized: You do not own this event" };
+      return { error: "You do not have permission to modify this event because you are not its host." };
     }
 
     event.isClosed = true;
@@ -305,10 +306,11 @@ export async function closeEventAction(eventId: string) {
     return { success: true };
   } catch (error: unknown) {
     console.error("Close event error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during event closure";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred while closing the event. Please try again."
+      ),
     };
   }
 }
@@ -321,18 +323,18 @@ export async function deleteEventAction(eventId: string) {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "host") {
-      return { error: "Unauthorized: Only hosts can delete events" };
+      return { error: "Only registered host accounts can delete events." };
     }
 
     await connectToDatabase();
 
     const event = await Event.findById(eventId);
     if (!event) {
-      return { error: "Event not found" };
+      return { error: "The requested event could not be found." };
     }
 
     if (event.hostId.toString() !== session.user.id) {
-      return { error: "Unauthorized: You do not own this event" };
+      return { error: "You do not have permission to modify this event because you are not its host." };
     }
 
     // If event has an uploaded Cloudinary poster, safely delete it
@@ -349,10 +351,11 @@ export async function deleteEventAction(eventId: string) {
     return { success: true };
   } catch (error: unknown) {
     console.error("Delete event error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during event deletion";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred while deleting the event. Please try again."
+      ),
     };
   }
 }
@@ -365,26 +368,23 @@ export async function updateEventAction(eventId: string, data: unknown) {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "host") {
-      return { error: "Unauthorized: Only hosts can edit events" };
+      return { error: "Only registered host accounts can edit events." };
     }
 
     const validated = eventCreationSchema.safeParse(data);
     if (!validated.success) {
-      const errorMessage = validated.error.issues
-        .map((err) => err.message)
-        .join(", ");
-      return { error: errorMessage };
+      return { error: formatValidationErrors(validated.error.issues) };
     }
 
     await connectToDatabase();
 
     const event = await Event.findById(eventId);
     if (!event) {
-      return { error: "Event not found" };
+      return { error: "The requested event could not be found." };
     }
 
     if (event.hostId.toString() !== session.user.id) {
-      return { error: "Unauthorized: You do not own this event" };
+      return { error: "You do not have permission to modify this event because you are not its host." };
     }
 
     const oldPublicId = event.imagePublicId;
@@ -420,10 +420,11 @@ export async function updateEventAction(eventId: string, data: unknown) {
     };
   } catch (error: unknown) {
     console.error("Update event error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred during event update";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred while updating the event. Please try again."
+      ),
     };
   }
 }
@@ -436,7 +437,7 @@ export async function getHostDashboardDataAction() {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "host") {
-      return { error: "Unauthorized: Only hosts can view dashboard data" };
+      return { error: "The host dashboard is restricted to host accounts." };
     }
 
     await connectToDatabase();
@@ -499,12 +500,11 @@ export async function getHostDashboardDataAction() {
     };
   } catch (error: unknown) {
     console.error("Get host dashboard data error:", error);
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "An unexpected error occurred while fetching dashboard data";
     return {
-      error: errorMessage,
+      error: getClearErrorMessage(
+        error,
+        "An unexpected error occurred while fetching your dashboard data. Please try again."
+      ),
     };
   }
 }
