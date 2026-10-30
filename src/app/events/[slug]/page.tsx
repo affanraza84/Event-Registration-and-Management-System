@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";
 import Registration from "@/models/Registration";
+import MediaAsset from "@/models/MediaAsset";
+import { getSocialShareUrl } from "@/lib/mediaTransformations";
 import EventDetailsClient from "./EventDetailsClient";
 
 export async function generateMetadata({
@@ -22,9 +24,26 @@ export async function generateMetadata({
       };
     }
 
+    const ogImage = event.imageUrl ? getSocialShareUrl(event.imageUrl) : undefined;
+
     return {
       title: `${event.title} | EventScout`,
       description: event.description.substring(0, 160),
+      openGraph: ogImage
+        ? {
+            title: event.title,
+            description: event.description.substring(0, 160),
+            images: [{ url: ogImage, width: 1200, height: 630 }],
+          }
+        : undefined,
+      twitter: ogImage
+        ? {
+            card: "summary_large_image",
+            title: event.title,
+            description: event.description.substring(0, 160),
+            images: [ogImage],
+          }
+        : undefined,
     };
   } catch {
     return {
@@ -77,6 +96,37 @@ export default async function EventPage({
     isRegistered = !!reg;
   }
 
+  const isHost =
+    session?.user?.role === "host" && session?.user?.id === event.hostId.toString();
+
+  const mediaQuery: Record<string, unknown> = { eventId: event._id };
+  if (!isHost) {
+    mediaQuery.moderationStatus = "approved";
+    mediaQuery.processingStatus = "ready";
+  }
+
+  const rawMedia = await MediaAsset.find(mediaQuery).sort({ createdAt: -1 });
+  const serializedMedia = rawMedia.map((a) => ({
+    id: a._id.toString(),
+    publicId: a.publicId,
+    secureUrl: a.secureUrl,
+    resourceType: a.resourceType,
+    assetType: a.assetType,
+    format: a.format,
+    eventId: a.eventId.toString(),
+    uploadedBy: a.uploadedBy.toString(),
+    tags: a.tags,
+    tagSource: a.tagSource,
+    moderationStatus: a.moderationStatus,
+    processingStatus: a.processingStatus,
+    moderationReason: a.moderationReason,
+    width: a.width,
+    height: a.height,
+    duration: a.duration,
+    bytes: a.bytes,
+    createdAt: a.createdAt.toISOString(),
+  }));
+
   const serializedEvent = {
     id: event._id.toString(),
     title: event.title,
@@ -98,6 +148,7 @@ export default async function EventPage({
       event={serializedEvent}
       initialIsRegistered={isRegistered}
       initialAttendeeCount={event.attendeeCount}
+      initialMediaAssets={serializedMedia}
       session={session}
     />
   );

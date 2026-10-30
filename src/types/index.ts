@@ -54,3 +54,31 @@ export interface IRegistration {
   attendeeEmail: string;
   registeredAt: Date;
 }
+
+export type MediaResourceType = "image" | "video";
+export type MediaAssetType = "poster" | "banner" | "gallery" | "promo_video";
+export type ModerationStatus = "pending" | "approved" | "rejected";
+export type ProcessingStatus = "uploading" | "ready" | "failed";
+
+export interface IMediaAsset {
+  _id: Types.ObjectId;
+  id: string;
+  publicId: string;
+  secureUrl: string;
+  resourceType: MediaResourceType;
+  assetType: MediaAssetType;
+  format: string;
+  eventId: Types.ObjectId;
+  uploadedBy: Types.ObjectId;
+  tags: string[];
+  tagSource?: "cloudinary_ai" | "context" | "manual";
+  moderationStatus: ModerationStatus;
+  processingStatus: ProcessingStatus;
+  moderationReason?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  bytes: number;
+  createdAt: Date;
+  updatedAt: Date;
+}

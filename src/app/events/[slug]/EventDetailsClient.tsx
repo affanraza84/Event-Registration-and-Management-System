@@ -25,10 +25,22 @@ import {
   AlertCircle,
   Share2,
   Sparkles,
+  Film,
+  Layers,
+  Maximize2,
+  X,
+  ImageIcon,
 } from "lucide-react";
 import { registerForEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
 import { getEventCover } from "@/lib/eventCovers";
+import MediaLibrary, { MediaAssetItem } from "@/components/MediaLibrary";
+import {
+  getHeroBannerUrl,
+  getVideoThumbnailUrl,
+  getAdaptiveVideoUrl,
+  getGalleryThumbnailUrl,
+} from "@/lib/mediaTransformations";
 import { getClearErrorMessage } from "@/utils/errorMessage";
 
 interface EventDetailsClientProps {
@@ -49,6 +61,7 @@ interface EventDetailsClientProps {
   };
   initialIsRegistered: boolean;
   initialAttendeeCount: number;
+  initialMediaAssets?: MediaAssetItem[];
   session: {
     user?: {
       name?: string | null;
@@ -63,11 +76,15 @@ export default function EventDetailsClient({
   event,
   initialIsRegistered,
   initialAttendeeCount,
+  initialMediaAssets = [],
   session,
 }: EventDetailsClientProps) {
   const router = useRouter();
   const [isRegistered, setIsRegistered] = useState(initialIsRegistered);
   const [attendeeCount, setAttendeeCount] = useState(initialAttendeeCount);
+  const mediaAssets = initialMediaAssets;
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [selectedGalleryPhoto, setSelectedGalleryPhoto] = useState<MediaAssetItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -108,6 +125,16 @@ export default function EventDetailsClient({
   );
 
   const cover = getEventCover(event.title, undefined, event.id, event.imageUrl);
+  const heroCoverUrl = event.imageUrl
+    ? getHeroBannerUrl(event.imageUrl)
+    : cover.url;
+
+  const promoVideos = mediaAssets.filter(
+    (a) => a.resourceType === "video" && (isHost || a.moderationStatus === "approved")
+  );
+  const galleryPhotos = mediaAssets.filter(
+    (a) => a.assetType === "gallery" && (isHost || a.moderationStatus === "approved")
+  );
 
   // Form setup
   const { register, handleSubmit } = useForm({
@@ -198,21 +225,34 @@ export default function EventDetailsClient({
             <span>Back to Gatherings</span>
           </Link>
 
-          <button
-            onClick={handleCopyLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E5DF] hover:border-[#5146E5] text-xs font-semibold text-[#171923] hover:text-[#5146E5] transition-all cursor-pointer shadow-2xs"
-            aria-label="Share event link"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>{copiedLink ? "Link Copied!" : "Share Event"}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {isHost && (
+              <button
+                type="button"
+                onClick={() => setIsMediaModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EEEAFE] border border-[#DCD5FA] hover:bg-[#E0DAFB] text-xs font-semibold text-[#5146E5] transition-all cursor-pointer shadow-2xs"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Media Intelligence ({mediaAssets.length})</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E5DF] hover:border-[#5146E5] text-xs font-semibold text-[#171923] hover:text-[#5146E5] transition-all cursor-pointer shadow-2xs"
+              aria-label="Share event link"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{copiedLink ? "Link Copied!" : "Share Event"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Hero Cover Banner */}
         <div className="rounded-3xl overflow-hidden border border-[#E8E5DF] bg-white shadow-[0_12px_40px_rgba(23,25,35,0.08)] mb-8 relative aspect-[16/9] md:aspect-[24/9] group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={cover.url}
+            src={heroCoverUrl}
             alt={cover.alt}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
           />
@@ -344,6 +384,78 @@ export default function EventDetailsClient({
                 {event.description}
               </div>
             </div>
+
+            {/* Promotional Video Showcase */}
+            {promoVideos.length > 0 && (
+              <div className="bg-white border border-[#E8E5DF] rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-5 rounded-full bg-[#5146E5]" />
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#171923] flex items-center gap-2">
+                      <Film className="w-5 h-5 text-[#5146E5]" />
+                      <span>Promotional Teaser</span>
+                    </h2>
+                  </div>
+                  <span className="text-xs font-semibold text-[#686D78]">
+                    Adaptive Cloudinary Video Stream
+                  </span>
+                </div>
+
+                <div className="rounded-2xl overflow-hidden bg-black shadow-md relative aspect-video">
+                  <video
+                    controls
+                    playsInline
+                    poster={getVideoThumbnailUrl(promoVideos[0].publicId, { width: 1280, height: 720 })}
+                    className="w-full h-full object-contain"
+                  >
+                    <source
+                      src={getAdaptiveVideoUrl(promoVideos[0].publicId)}
+                      type={`video/${promoVideos[0].format || "mp4"}`}
+                    />
+                    Your browser does not support HTML5 video playback.
+                  </video>
+                </div>
+              </div>
+            )}
+
+            {/* Event Media Gallery */}
+            {galleryPhotos.length > 0 && (
+              <div className="bg-white border border-[#E8E5DF] rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-5 rounded-full bg-[#5146E5]" />
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#171923] flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5 text-[#5146E5]" />
+                      <span>Event Media Gallery</span>
+                    </h2>
+                  </div>
+                  <span className="text-xs font-semibold text-[#686D78]">
+                    {galleryPhotos.length} photograph{galleryPhotos.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                  {galleryPhotos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      onClick={() => setSelectedGalleryPhoto(photo)}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-[#FAF9F6] border border-[#E8E5DF] cursor-pointer shadow-2xs hover:shadow-xs transition-all"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getGalleryThumbnailUrl(photo.publicId, { width: 500, height: 500 })}
+                        alt={photo.tags.join(", ") || `${event.title} gallery`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <Maximize2 className="w-5 h-5 drop-shadow-md" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* What to expect / Community Trust note */}
             <div className="bg-[#FAF9F6] border border-[#E8E5DF] rounded-3xl p-6 sm:p-8 space-y-4">
@@ -588,6 +700,86 @@ export default function EventDetailsClient({
             </div>
           </div>
         </div>
+
+        {/* Gallery Photo Lightbox Modal */}
+        {selectedGalleryPhoto && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={() => setSelectedGalleryPhoto(null)}
+          >
+            <div
+              className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedGalleryPhoto(null)}
+                className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300 cursor-pointer"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedGalleryPhoto.secureUrl}
+                alt={event.title}
+                className="max-h-[80vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+              />
+              {selectedGalleryPhoto.tags.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                  {selectedGalleryPhoto.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-md text-white border border-white/20"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Host Media Library Management Modal */}
+        {isHost && isMediaModalOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs animate-fade-in"
+          >
+            <div className="relative bg-white border border-[#E8E5DF] rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-4 sm:p-6 border-b border-[#E8E5DF] flex items-center justify-between bg-[#FAF9F6]">
+                <div>
+                  <span className="text-[11px] font-bold text-[#5146E5] uppercase tracking-wider">
+                    Host Media Control
+                  </span>
+                  <h3 className="text-lg font-bold text-[#171923]">{event.title}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMediaModalOpen(false)}
+                  className="p-2 text-[#686D78] hover:text-[#171923] rounded-xl hover:bg-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <MediaLibrary
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  isHost={true}
+                  onCoverSelected={async () => {
+                    // Refresh current view when cover is switched
+                    router.refresh();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import Event from "@/models/Event";
+import MediaAsset from "@/models/MediaAsset";
+import mongoose from "mongoose";
 import {
   isCloudinaryConfigured,
   getMaxUploadSizeBytes,
@@ -11,6 +13,7 @@ import {
   uploadImageBuffer,
   deleteCloudinaryAsset,
 } from "@/lib/cloudinary";
+import { extractMediaTags } from "@/utils/mediaTagging";
 import { getClearErrorMessage } from "@/utils/errorMessage";
 
 export async function POST(req: NextRequest) {
@@ -145,8 +148,36 @@ export async function POST(req: NextRequest) {
     if (previousPublicId && previousPublicId.startsWith("eventscout/")) {
       try {
         await deleteCloudinaryAsset(previousPublicId);
+        if (eventId) {
+          await MediaAsset.findOneAndDelete({ publicId: previousPublicId });
+        }
       } catch (err) {
         console.warn("Failed to clean up replaced Cloudinary asset:", err);
+      }
+    }
+
+    // 11. If this upload is associated with an event, register in MediaAsset
+    if (uploadType === "event" && eventId && mongoose.Types.ObjectId.isValid(eventId)) {
+      try {
+        const tagging = extractMediaTags(uploadResult.tags, { assetType: "poster" });
+        await MediaAsset.create({
+          publicId: uploadResult.publicId,
+          secureUrl: uploadResult.secureUrl,
+          resourceType: "image",
+          assetType: "poster",
+          format: uploadResult.format,
+          eventId: new mongoose.Types.ObjectId(eventId),
+          uploadedBy: new mongoose.Types.ObjectId(session.user.id),
+          tags: tagging.tags,
+          tagSource: tagging.tagSource,
+          moderationStatus: "approved",
+          processingStatus: "ready",
+          width: uploadResult.width,
+          height: uploadResult.height,
+          bytes: uploadResult.bytes,
+        });
+      } catch (dbErr) {
+        console.warn("Could not register MediaAsset record for poster upload:", dbErr);
       }
     }
 

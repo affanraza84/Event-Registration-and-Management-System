@@ -29,11 +29,13 @@ import {
   ChevronRight,
   ExternalLink,
   Edit3,
+  Layers,
 } from "lucide-react";
 import { closeEventAction, deleteEventAction, updateEventAction } from "@/actions/events";
 import Navbar from "@/components/Navbar";
 import ImageUpload from "@/components/ImageUpload";
 import DatePicker from "@/components/DatePicker";
+import MediaLibrary from "@/components/MediaLibrary";
 import { getEventCover } from "@/lib/eventCovers";
 import { getClearErrorMessage } from "@/utils/errorMessage";
 
@@ -135,6 +137,7 @@ export default function DashboardClient({
   });
   const [isUploadingEditPoster, setIsUploadingEditPoster] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [mediaModalEvent, setMediaModalEvent] = useState<EventItem | null>(null);
 
   // Sorting state for TanStack Table
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -596,6 +599,15 @@ export default function DashboardClient({
                         )}
                       </td>
                       <td className="py-4 pl-4 text-right space-x-2">
+                        <button
+                          onClick={() => setMediaModalEvent(ev)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#EEEAFE] hover:bg-[#E0DAFB] border border-[#DCD5FA] text-xs font-semibold rounded-lg text-[#5146E5] transition-all shadow-2xs cursor-pointer"
+                          title="Open Media Library & Intelligence"
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Media</span>
+                        </button>
+
                         <button
                           onClick={() => handleOpenEditModal(ev)}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-[#FAF9F6] border border-[#E8E5DF] hover:border-[#D5D1C8] text-xs font-semibold rounded-lg text-[#171923] transition-all shadow-2xs cursor-pointer"
@@ -1099,6 +1111,60 @@ export default function DashboardClient({
                   "Delete Event"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Library Modal for Event */}
+      {mediaModalEvent && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs animate-fade-in"
+        >
+          <div className="relative bg-white border border-[#E8E5DF] rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-6 border-b border-[#E8E5DF] flex items-center justify-between bg-[#FAF9F6]">
+              <div>
+                <span className="text-[11px] font-bold text-[#5146E5] uppercase tracking-wider">
+                  Event Media System
+                </span>
+                <h3 className="text-lg font-bold text-[#171923]">
+                  {mediaModalEvent.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMediaModalEvent(null)}
+                className="p-2 text-[#686D78] hover:text-[#171923] rounded-xl hover:bg-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <MediaLibrary
+                eventId={mediaModalEvent.id}
+                eventTitle={mediaModalEvent.title}
+                isHost={true}
+                onCoverSelected={async (url, publicId) => {
+                  setEvents((prev) =>
+                    prev.map((e) =>
+                      e.id === mediaModalEvent.id
+                        ? { ...e, imageUrl: url, imagePublicId: publicId }
+                        : e
+                    )
+                  );
+                  await updateEventAction(mediaModalEvent.id, {
+                    ...mediaModalEvent,
+                    imageUrl: url,
+                    imagePublicId: publicId,
+                  });
+                  router.refresh();
+                }}
+              />
             </div>
           </div>
         </div>

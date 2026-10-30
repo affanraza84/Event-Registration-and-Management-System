@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Clock, MapPin, ArrowRight, Users, Sparkles } from "lucide-react";
 import { getEventCover } from "@/lib/eventCovers";
+import { getCardImageUrl } from "@/lib/mediaTransformations";
 
 export interface EventCardData {
   id: string;
@@ -52,7 +53,7 @@ export default function EventCard({
         <div className="relative w-full md:w-5/12 lg:w-5/12 h-56 sm:h-64 md:h-full md:min-h-[260px] md:max-h-[340px] overflow-hidden bg-[#FAF9F6] shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={cover.url}
+            src={getCardImageUrl(cover.url)}
             alt={cover.alt}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
@@ -166,7 +167,7 @@ export default function EventCard({
         <div className="relative aspect-[16/10] max-h-[220px] w-full overflow-hidden bg-[#FAF9F6]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={cover.url}
+            src={getCardImageUrl(cover.url)}
             alt={cover.alt}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
