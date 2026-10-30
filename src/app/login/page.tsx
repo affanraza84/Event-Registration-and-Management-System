@@ -26,7 +26,6 @@ import { getClearErrorMessage } from "@/utils/errorMessage";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
   const registered = searchParams.get("registered");
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<"host" | "attendee">("host");
@@ -73,11 +72,7 @@ function LoginForm() {
           )
         );
       } else {
-        if (callbackUrl) {
-          router.push(callbackUrl);
-        } else {
-          router.push(data.role === "host" ? "/dashboard" : "/my-events");
-        }
+        router.push("/");
         router.refresh();
       }
     } catch (err) {
